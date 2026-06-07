@@ -11,8 +11,8 @@
 #   make all-mock       mock-build every package
 #   make clean
 
-PKGS        := eventb-to-txt evbt eventb-checker tlc4b b2program rodin rodin-rc atelier-b
-GRADLE_PKGS := eventb-checker tlc4b b2program        # built from source: need JDK 21 + network
+PKGS        := eventb-to-txt evbt eventb-checker tlc4b b2program eventb-animate rodin rodin-rc atelier-b
+GRADLE_PKGS := eventb-checker tlc4b b2program eventb-animate   # built from source: need JDK 21 + network
 
 MOCK_ROOT   ?= fedora-44-x86_64
 BUILDDIR    := $(abspath build)
@@ -36,9 +36,9 @@ srpm-%:
 
 # --- Mock build -------------------------------------------------------------
 # Gradle packages build in a chroot that layers in the Adoptium repo + network.
-mock-eventb-checker mock-tlc4b mock-b2program: MOCK_R   := $(ADOPTIUM_ROOT)
-mock-eventb-checker mock-tlc4b mock-b2program: MOCK_NET := --enable-network
-mock-eventb-checker mock-tlc4b mock-b2program: adoptium-config
+$(addprefix mock-,$(GRADLE_PKGS)): MOCK_R   := $(ADOPTIUM_ROOT)
+$(addprefix mock-,$(GRADLE_PKGS)): MOCK_NET := --enable-network
+$(addprefix mock-,$(GRADLE_PKGS)): adoptium-config
 
 mock-%: srpm-%
 	sg mock -c 'mock -r $(or $(MOCK_R),$(MOCK_ROOT)) $(MOCK_NET) --resultdir=$(BUILDDIR)/$* $(SRPMDIR)/$*-*.src.rpm'

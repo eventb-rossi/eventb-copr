@@ -8,7 +8,7 @@ code generation, model checking and validation.
 
 ```sh
 sudo dnf copr enable @eventb-rossi/eventb-copr
-sudo dnf install eventb-checker evbt tlc4b b2program eventb-to-txt
+sudo dnf install eventb-checker evbt tlc4b b2program eventb-animate eventb-to-txt
 ```
 
 ### Command-line tools
@@ -19,6 +19,7 @@ sudo dnf install eventb-checker evbt tlc4b b2program eventb-to-txt
 | `evbt` | 1.5.0 | [EventBTool](https://codeberg.org/viklauverk/EventBTool) — code generation and documentation from Event-B models |
 | `tlc4b` | 1.2.3 | [TLC4B](https://github.com/hhu-stups/tlc4b) — model-check classical B by translating to TLA+ and running TLC |
 | `b2program` | 0.1.0 (snapshot) | [B2Program](https://github.com/favu100/b2program) — generate Java/C++/Python/Rust/TypeScript from high-level B |
+| `eventb-animate` | 5.0 | [eventb-animate](https://github.com/eventb-rossi/eventb-animate) — animate Event-B models with the ProB model checker, no Rodin install |
 | `eventb-to-txt` | 1.7 | [eventb-to-txt](https://github.com/eventb-rossi/eventb-to-txt) — convert Rodin models (`.bum`/`.buc`) to CamilleX plain text |
 
 ### GUI applications
@@ -40,8 +41,8 @@ only one at a time.
 
 ## Requirements
 
-- The command-line Java tools (`eventb-checker`, `evbt`, `tlc4b`, `b2program`) pull in
-  a JRE automatically. `evbt` needs Java 22+, the others Java 21+.
+- The command-line Java tools (`eventb-checker`, `evbt`, `tlc4b`, `b2program`,
+  `eventb-animate`) pull in a JRE automatically. `evbt` needs Java 22+, the others Java 21+.
 - `eventb-to-txt` is a pure-Python tool; it pulls in `python3` automatically.
 - **Rodin** needs a system **Java 17 or newer** (it bundles none) and GTK 3.
 
@@ -68,10 +69,10 @@ make mock-eventb-to-txt            # build it in a mock chroot
 make lint-eventb-to-txt            # rpmlint
 ```
 
-The three Gradle-built tools (`eventb-checker`, `tlc4b`, `b2program`) compile from
-upstream source: their mock builds enable network access and add the Adoptium Temurin
-repo (for JDK 21, which Fedora no longer ships). The top-level `Makefile` wires this up
-automatically for those targets.
+The four Gradle-built tools (`eventb-checker`, `tlc4b`, `b2program`, `eventb-animate`)
+compile from upstream source: their mock builds enable network access and add the Adoptium
+Temurin repo (for JDK 21, which Fedora no longer ships). The top-level `Makefile` wires this
+up automatically for those targets.
 
 ## Maintainers
 
