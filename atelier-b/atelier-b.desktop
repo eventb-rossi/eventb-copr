@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=Atelier B
+GenericName=B-method IDE
+Comment=Formal modelling and verification with the B method
+Exec=atelier-b
+Icon=atelier-b
+Terminal=false
+Categories=Development;IDE;
+Keywords=B-method;formal;verification;proof;
+StartupNotify=true
