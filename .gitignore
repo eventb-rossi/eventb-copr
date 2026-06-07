@@ -13,6 +13,11 @@
 *.zip
 # evbt ships its release asset as a bare file named "evbt"
 evbt/evbt
+# Upstream license/notice texts fetched as extra sources into a package dir
+/*/LICENSE
+/*/COPYING
+/*/COPYING.txt
+/*/NOTICE
 
 # Gradle / build caches
 .gradle/
