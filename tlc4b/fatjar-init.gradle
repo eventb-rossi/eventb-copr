@@ -1,0 +1,16 @@
+// Gradle init script that folds the runtime classpath into the standard `jar`
+// task, yielding a single self-contained runnable jar. TLC4B ships no
+// fat-jar/shadow task, so injecting one here keeps the upstream build
+// untouched. Applied with `gradle -I fatjar-init.gradle jar`.
+allprojects {
+    afterEvaluate { p ->
+        if (p.plugins.hasPlugin('java')) {
+            p.tasks.named('jar', Jar) {
+                duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+                exclude 'META-INF/*.SF', 'META-INF/*.DSA', 'META-INF/*.RSA'
+                manifest { attributes('Main-Class': 'de.tlc4b.TLC4B') }
+                from { p.configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) } }
+            }
+        }
+    }
+}
