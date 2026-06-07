@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=Application
+Name=Rodin Platform
+GenericName=Event-B IDE
+Comment=IDE for formal modelling and verification with Event-B
+Exec=rodin
+Icon=rodin
+Terminal=false
+Categories=Development;IDE;
+Keywords=Event-B;B-method;formal;modelling;verification;
+StartupNotify=true
+StartupWMClass=Rodin
