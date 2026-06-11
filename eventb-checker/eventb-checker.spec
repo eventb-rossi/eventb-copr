@@ -1,5 +1,5 @@
 Name:           eventb-checker
-Version:        1.3
+Version:        1.5
 Release:        1%{?dist}
 Summary:        Standalone validator for Event-B models, no Rodin installation required
 
@@ -54,5 +54,8 @@ chmod 0755 %{buildroot}%{_bindir}/%{name}
 %{_bindir}/%{name}
 
 %changelog
+* Thu Jun 11 2026 Denis Efremov <efremov@linux.com> - 1.5-1
+- Update to 1.5
+
 * Sun Jun 07 2026 Denis Efremov <efremov@linux.com> - 1.3-1
 - Initial package
