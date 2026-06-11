@@ -11,7 +11,7 @@
 #   make all-mock       mock-build every package
 #   make clean
 
-PKGS        := eventb-to-txt evbt eventb-checker tlc4b b2program eventb-animate rodin rodin-rc atelier-b prob
+PKGS        := eventb-to-txt evbt eventb-checker tlc4b b2program eventb-animate rodin rodin-rc atelier-b prob prob2-ui
 GRADLE_PKGS := eventb-checker tlc4b b2program eventb-animate   # built from source: need JDK 21 + network
 
 MOCK_ROOT   ?= fedora-44-x86_64

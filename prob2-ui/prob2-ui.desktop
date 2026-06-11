@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=ProB2-UI
+GenericName=Model Checker
+Comment=JavaFX animator and model checker for B and Event-B
+Exec=prob2-ui
+Icon=prob2-ui
+Terminal=false
+Categories=Development;
+Keywords=B-method;Event-B;CSP;TLA+;Z;model-checking;
+StartupNotify=false
