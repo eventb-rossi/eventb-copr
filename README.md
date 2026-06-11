@@ -13,28 +13,28 @@ sudo dnf install eventb-checker evbt tlc4b b2program eventb-animate eventb-to-tx
 
 ### Command-line tools
 
-| Package | Version | Description |
-| ------- | ------- | ----------- |
-| `eventb-checker` | 1.3 | Validate Event-B models (`.bum`/`.buc`/`.eventb` or `.zip`) without a Rodin install |
-| `evbt` | 1.5.0 | [EventBTool](https://codeberg.org/viklauverk/EventBTool) — code generation and documentation from Event-B models |
-| `tlc4b` | 1.2.3 | [TLC4B](https://github.com/hhu-stups/tlc4b) — model-check classical B by translating to TLA+ and running TLC |
-| `b2program` | 0.1.0 (snapshot) | [B2Program](https://github.com/favu100/b2program) — generate Java/C++/Python/Rust/TypeScript from high-level B |
-| `eventb-animate` | 5.0 | [eventb-animate](https://github.com/eventb-rossi/eventb-animate) — animate Event-B models with the ProB model checker, no Rodin install |
-| `eventb-to-txt` | 1.7 | [eventb-to-txt](https://github.com/eventb-rossi/eventb-to-txt) — convert Rodin models (`.bum`/`.buc`) to CamilleX plain text |
+| Package | Description |
+| ------- | ----------- |
+| `eventb-checker` | Validate Event-B models (`.bum`/`.buc`/`.eventb` or `.zip`) without a Rodin install |
+| `evbt` | [EventBTool](https://codeberg.org/viklauverk/EventBTool) — code generation and documentation from Event-B models |
+| `tlc4b` | [TLC4B](https://github.com/hhu-stups/tlc4b) — model-check classical B by translating to TLA+ and running TLC |
+| `b2program` | [B2Program](https://github.com/favu100/b2program) — generate Java/C++/Python/Rust/TypeScript from high-level B |
+| `eventb-animate` | [eventb-animate](https://github.com/eventb-rossi/eventb-animate) — animate Event-B models with the ProB model checker, no Rodin install |
+| `eventb-to-txt` | [eventb-to-txt](https://github.com/eventb-rossi/eventb-to-txt) — convert Rodin models (`.bum`/`.buc`) to CamilleX plain text |
 
 ### GUI applications
 
-| Package | Version | Arch | Description |
-| ------- | ------- | ---- | ----------- |
-| `rodin` | 3.9 | x86_64 | Rodin Platform — Event-B IDE (stable) |
-| `rodin-rc` | 3.10-RC2 | x86_64, aarch64 | Rodin Platform — release candidate (conflicts with `rodin`) |
-| `atelier-b` | 24.04.2 | x86_64 | Atelier B Community Edition — IDE for the B method |
-| `prob` | 1.15.1 | x86_64 | [ProB](https://prob.hhu.de/) — animator/model checker; Tcl/Tk GUI (`prob`) plus the `probcli` CLI |
-| `prob2-ui` | 1.3.1 | noarch | [ProB2-UI](https://prob.hhu.de/w/index.php/ProB2-UI) — JavaFX animator and model checker built on ProB |
+| Package | Arch | Description |
+| ------- | ---- | ----------- |
+| `rodin` | x86_64 | Rodin Platform — Event-B IDE (stable) |
+| `rodin-rc` | x86_64, aarch64 | Rodin Platform — release candidate (conflicts with `rodin`) |
+| `atelier-b` | x86_64 | Atelier B Community Edition — IDE for the B method |
+| `prob` | x86_64 | [ProB](https://prob.hhu.de/) — animator/model checker; Tcl/Tk GUI (`prob`) plus the `probcli` CLI |
+| `prob2-ui` | noarch | [ProB2-UI](https://prob.hhu.de/w/index.php/ProB2-UI) — JavaFX animator and model checker built on ProB |
 
 ```sh
-sudo dnf install rodin        # stable 3.9
-sudo dnf install rodin-rc     # 3.10 release candidate
+sudo dnf install rodin        # stable
+sudo dnf install rodin-rc     # release candidate
 sudo dnf install atelier-b    # Atelier B Community Edition
 sudo dnf install prob         # ProB (probcli + Tcl/Tk GUI)
 sudo dnf install prob2-ui     # ProB2-UI (JavaFX)
