@@ -1,8 +1,8 @@
 # Fedora Copr packaging for Event-B / B-method tools
 
 RPM packaging for the [Event-B](https://www.event-b.org/) / B-method ecosystem —
-the Rodin Platform IDE, ClearSy's Atelier B, and a set of command-line tools for
-code generation, model checking and validation.
+the Rodin Platform IDE, ClearSy's Atelier B, the ProB model checker, and a set of
+command-line tools for code generation, model checking and validation.
 
 ## Install
 
@@ -29,11 +29,13 @@ sudo dnf install eventb-checker evbt tlc4b b2program eventb-animate eventb-to-tx
 | `rodin` | 3.9 | x86_64 | Rodin Platform — Event-B IDE (stable) |
 | `rodin-rc` | 3.10-RC2 | x86_64, aarch64 | Rodin Platform — release candidate (conflicts with `rodin`) |
 | `atelier-b` | 24.04.2 | x86_64 | Atelier B Community Edition — IDE for the B method |
+| `prob` | 1.15.1 | x86_64 | [ProB](https://prob.hhu.de/) — animator/model checker; Tcl/Tk GUI (`prob`) plus the `probcli` CLI |
 
 ```sh
 sudo dnf install rodin        # stable 3.9
 sudo dnf install rodin-rc     # 3.10 release candidate
 sudo dnf install atelier-b    # Atelier B Community Edition
+sudo dnf install prob         # ProB (probcli + Tcl/Tk GUI)
 ```
 
 `rodin` and `rodin-rc` both provide the Rodin IDE and therefore conflict — install
@@ -45,6 +47,8 @@ only one at a time.
   `eventb-animate`) pull in a JRE automatically. `evbt` needs Java 22+, the others Java 21+.
 - `eventb-to-txt` is a pure-Python tool; it pulls in `python3` automatically.
 - **Rodin** needs a system **Java 17 or newer** (it bundles none) and GTK 3.
+- **ProB** (`prob`) needs **Java 8 or newer** and Tcl/Tk 8.6; it pulls in `tk8`,
+  `gmp` and `libuuid`, and recommends `graphviz` for graph/state-space visualisation.
 
 ## Repository layout
 

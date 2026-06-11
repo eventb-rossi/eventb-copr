@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=ProB
+GenericName=Model Checker
+Comment=Animator, constraint solver and model checker for B and Event-B
+Exec=prob
+Icon=prob
+Terminal=false
+Categories=Development;
+Keywords=B-method;Event-B;CSP;TLA+;Z;model-checking;
+StartupNotify=false
