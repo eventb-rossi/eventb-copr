@@ -15,7 +15,7 @@ sudo dnf install eventb-checker evbt tlc4b b2program eventb-animate eventb-to-tx
 
 | Package | Description |
 | ------- | ----------- |
-| `eventb-checker` | Validate Event-B models (`.bum`/`.buc`/`.eventb` or `.zip`) without a Rodin install |
+| `eventb-checker` | [eventb-checker](https://github.com/eventb-rossi/eventb-checker) — validate Event-B models (`.bum`/`.buc`/`.eventb` or `.zip`) without a Rodin install |
 | `evbt` | [EventBTool](https://codeberg.org/viklauverk/EventBTool) — code generation and documentation from Event-B models |
 | `tlc4b` | [TLC4B](https://github.com/hhu-stups/tlc4b) — model-check classical B by translating to TLA+ and running TLC |
 | `b2program` | [B2Program](https://github.com/favu100/b2program) — generate Java/C++/Python/Rust/TypeScript from high-level B |
