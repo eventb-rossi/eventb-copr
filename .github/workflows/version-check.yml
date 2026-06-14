@@ -32,7 +32,7 @@ jobs:
       tracks: ${{ steps.scan.outputs.tracks }}
     steps:
       - uses: actions/checkout@v6
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: '3.12'
       - name: Scan upstreams
@@ -59,7 +59,7 @@ jobs:
         pkg: ${{ fromJSON(needs.detect.outputs.bump_matrix) }}
     steps:
       - uses: actions/checkout@v6
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: '3.12'
       - name: Bump ${{ matrix.pkg }}
