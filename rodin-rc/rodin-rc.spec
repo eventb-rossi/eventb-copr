@@ -15,7 +15,7 @@
 
 Name:           rodin-rc
 Version:        3.10
-Release:        0.1.RC2%{?dist}
+Release:        0.2.RC2%{?dist}
 Summary:        Rodin Platform release candidate (Event-B IDE)
 
 License:        EPL-1.0 AND EPL-2.0
@@ -27,6 +27,7 @@ Source1:        rodin.desktop
 # Upstream ships only a Linux x86_64 build for this release candidate.
 ExclusiveArch:  x86_64
 BuildRequires:  desktop-file-utils
+BuildRequires:  ImageMagick
 
 # rodin-rc is a drop-in pre-release of the same IDE: it installs to the same
 # paths as the stable rodin package, so the two cannot be installed together.
@@ -63,9 +64,22 @@ exec /usr/lib/rodin/rodin "$@"
 EOF
 chmod 0755 %{buildroot}%{_bindir}/rodin
 
-install -Dpm 0644 icon.xpm %{buildroot}%{_datadir}/pixmaps/rodin.xpm
+# Icon: convert the upstream 32x32 XPM to PNG and install into the hicolor theme.
+for size in 32 48; do
+    install -dm 0755 %{buildroot}%{_datadir}/icons/hicolor/${size}x${size}/apps
+    magick convert -resize ${size}x${size} icon.xpm \
+        %{buildroot}%{_datadir}/icons/hicolor/${size}x${size}/apps/rodin.png
+done
 desktop-file-install --dir=%{buildroot}%{_datadir}/applications --set-key=Name --set-value="Rodin Platform (RC)" %{SOURCE1}
 # desktop-file-install keeps the source basename (rodin.desktop).
+
+%posttrans
+/usr/bin/gtk-update-icon-cache -f -t %{_datadir}/icons/hicolor &>/dev/null || :
+
+%postun
+if [ $1 -eq 0 ]; then
+    /usr/bin/gtk-update-icon-cache -f -t %{_datadir}/icons/hicolor &>/dev/null || :
+fi
 
 %check
 desktop-file-validate %{buildroot}%{_datadir}/applications/rodin.desktop
@@ -74,9 +88,13 @@ desktop-file-validate %{buildroot}%{_datadir}/applications/rodin.desktop
 %license epl-2.0.html
 %{_bindir}/rodin
 %{rodindir}
-%{_datadir}/pixmaps/rodin.xpm
+%{_datadir}/icons/hicolor/32x32/apps/rodin.png
+%{_datadir}/icons/hicolor/48x48/apps/rodin.png
 %{_datadir}/applications/rodin.desktop
 
 %changelog
+* Sun Jun 14 2026 Denis Efremov <efremov@linux.com> - 3.10-0.2.RC2
+- Install icon into hicolor theme as PNG (fixes missing icon in GNOME)
+
 * Sun Jun 07 2026 Denis Efremov <efremov@linux.com> - 3.10-0.1.RC2
 - Initial package: repackage the 3.10-RC2 upstream Linux build

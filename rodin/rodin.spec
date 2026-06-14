@@ -15,7 +15,7 @@
 
 Name:           rodin
 Version:        3.9
-Release:        1%{?dist}
+Release:        2%{?dist}
 Summary:        IDE for formal modelling and verification with Event-B
 
 # Eclipse platform components are EPL-2.0; the Rodin-specific plugins are EPL-1.0.
@@ -28,6 +28,7 @@ Source1:        rodin.desktop
 
 ExclusiveArch:  x86_64
 BuildRequires:  desktop-file-utils
+BuildRequires:  ImageMagick
 
 # Rodin bundles no JRE and requires Java 17 or newer.
 Requires:       java-headless >= 1:17
@@ -63,9 +64,21 @@ exec /usr/lib/rodin/rodin "$@"
 EOF
 chmod 0755 %{buildroot}%{_bindir}/%{name}
 
-# Icon and desktop entry.
-install -Dpm 0644 icon.xpm %{buildroot}%{_datadir}/pixmaps/%{name}.xpm
+# Icon: convert the upstream 32x32 XPM to PNG and install into the hicolor theme.
+for size in 32 48; do
+    install -dm 0755 %{buildroot}%{_datadir}/icons/hicolor/${size}x${size}/apps
+    magick convert -resize ${size}x${size} icon.xpm \
+        %{buildroot}%{_datadir}/icons/hicolor/${size}x${size}/apps/%{name}.png
+done
 desktop-file-install --dir=%{buildroot}%{_datadir}/applications %{SOURCE1}
+
+%posttrans
+/usr/bin/gtk-update-icon-cache -f -t %{_datadir}/icons/hicolor &>/dev/null || :
+
+%postun
+if [ $1 -eq 0 ]; then
+    /usr/bin/gtk-update-icon-cache -f -t %{_datadir}/icons/hicolor &>/dev/null || :
+fi
 
 %check
 desktop-file-validate %{buildroot}%{_datadir}/applications/%{name}.desktop
@@ -74,9 +87,13 @@ desktop-file-validate %{buildroot}%{_datadir}/applications/%{name}.desktop
 %license epl-2.0.html
 %{_bindir}/%{name}
 %{rodindir}
-%{_datadir}/pixmaps/%{name}.xpm
+%{_datadir}/icons/hicolor/32x32/apps/%{name}.png
+%{_datadir}/icons/hicolor/48x48/apps/%{name}.png
 %{_datadir}/applications/%{name}.desktop
 
 %changelog
+* Sun Jun 14 2026 Denis Efremov <efremov@linux.com> - 3.9-2
+- Install icon into hicolor theme as PNG (fixes missing icon in GNOME)
+
 * Sun Jun 07 2026 Denis Efremov <efremov@linux.com> - 3.9-1
 - Initial package: repackage the upstream Linux build
