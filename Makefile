@@ -58,8 +58,9 @@ adoptium-config:
 	  | sudo tee /etc/mock/$(ADOPTIUM_ROOT).cfg >/dev/null
 
 # --- Lint -------------------------------------------------------------------
+# -c .rpmlint.toml applies the same accepted-warning baseline the sanity CI uses.
 lint-%:
-	rpmlint $*/$*.spec $(wildcard $(BUILDDIR)/$*/*.rpm)
+	rpmlint -c $(CURDIR)/.rpmlint.toml $*/$*.spec $(wildcard $(BUILDDIR)/$*/*.rpm)
 
 # --- Aggregates -------------------------------------------------------------
 all-srpm: $(addprefix srpm-,$(PKGS))

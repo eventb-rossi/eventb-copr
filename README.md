@@ -64,6 +64,7 @@ One directory per package, each holding its `.spec` and any local sources. The s
 <pkg>/<pkg>.spec        # plus wrapper scripts, .desktop files, gradle init scripts
 .copr/Makefile          # Copr SRPM entry point
 Makefile                # local: srpm-<pkg>, mock-<pkg>, lint-<pkg>
+.github/workflows/      # version-check (upstream tracker) + sanity (rpmlint)
 ```
 
 ## Building locally
@@ -89,3 +90,25 @@ Builds are hosted on Copr at
 Each package is registered as an SCM package pointing at its subdirectory here, using
 the `make srpm` method; the project has network access enabled and the Adoptium repo
 added as an external repository.
+
+## Continuous integration
+
+Two GitHub Actions workflows (mirroring the `homebrew-tap` and `gentoo-overlay` repos):
+
+- **`version-check`** — runs daily and on demand. It detects new upstream releases via
+  [`.github/scripts/version_check.py`](.github/scripts/version_check.py): packages with a
+  clean `%{version}`-templated `Source0` are auto-bumped into a pull request (the spec's
+  `Version:`/`Release:`/`%changelog` are rewritten — no source artifact is committed, Copr
+  re-fetches `Source0` at build time), while packages with opaque build ids or
+  non-derivable URLs (`rodin`, `rodin-rc`, `atelier-b`, `tlc4b`, `eventb-to-txt`) get a
+  tracking issue labelled `version-bump`. `b2program` (pinned master commit) is not tracked.
+- **`sanity`** — runs on every push/PR. In a Fedora container it parses every spec
+  (`rpmspec -P`) and runs `rpmlint -c .rpmlint.toml`, failing only on error-severity
+  diagnostics (accepted warnings are filtered by [`.rpmlint.toml`](.rpmlint.toml)).
+
+[`.github/dependabot.yml`](.github/dependabot.yml) keeps the workflows' actions current
+(the only ecosystem applicable here — spec upstreams are handled by `version-check`).
+
+To let auto-bump PRs re-trigger `sanity` (the default `GITHUB_TOKEN` cannot trigger
+workflows from bot-authored PRs), add a repository secret **`VERSION_BUMP_TOKEN`** — a PAT
+with `Contents` + `Pull requests: write`. Without it the PRs still open, just without CI.

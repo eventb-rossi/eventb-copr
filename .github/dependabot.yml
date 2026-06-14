@@ -1,0 +1,16 @@
+# Dependabot keeps the GitHub Actions used by our workflows pinned to current
+# releases (actions/checkout, actions/setup-python, peter-evans/create-pull-request).
+#
+# This is the only ecosystem Dependabot can serve here: the repo has no language
+# manifest (it ships RPM .spec files, whose upstream Source0 versions are tracked
+# by .github/workflows/version-check.yml, not by Dependabot).
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    labels:
+      - dependencies
+    commit-message:
+      prefix: "ci"

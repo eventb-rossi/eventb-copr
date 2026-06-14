@@ -1,0 +1,36 @@
+# rpmlint baseline for the eventb-rossi Copr package set.
+#
+# Loaded by the sanity workflow (.github/workflows/sanity.yml) as
+#   rpmlint -c .rpmlint.toml */*.spec
+# (-c adds to the shipped Fedora config; -r/rpmlintrc does NOT apply Filters.)
+# The CI gate fails only on error-severity (E:) diagnostics; this file filters
+# the warnings that are expected and accepted for these packages so the output
+# stays signal-rich.
+#
+# Each Filters entry is a regex searched against a full rpmlint output line.
+
+Filters = [
+    # Repackaged prebuilt distributions (rodin, prob, atelier-b, prob2-ui, evbt)
+    # and the Gradle-built jars have nothing meaningful to run in a %check that
+    # the %install/desktop validation doesn't already cover.
+    '.*no-%check-section.*',
+
+    # %{_bindir} etc. appear in explanatory spec comments by design (the wrapper
+    # scripts they describe install into those macro paths).
+    '.*macro-in-comment.*',
+
+    # --- Forward-looking: these only surface if built binary RPMs are linted ---
+    # (the per-PR job lints specs only). The specs deliberately repackage
+    # upstream binaries intact: no debuginfo, no stripping, bundled private
+    # libraries, and Eclipse/SICStus/Qt trees under %{_prefix}/lib or /opt.
+    '.*no-documentation.*',
+    '.*unstripped-binary-or-object.*',
+    '.*statically-linked-binary.*',
+    '.*binary-or-shlib-defines-rpath.*',
+    '.*only-non-binary-in-usr-lib.*',
+    '.*no-ldconfig-symlink.*',
+    '.*library-without-ldconfig-post.*',
+    '.*devel-file-in-non-devel-package.*',
+    '.*hidden-file-or-dir.*',
+    '.*zero-length.*',
+]

@@ -23,6 +23,10 @@ evbt/evbt
 .gradle/
 build/libs/
 
+# Python bytecode (e.g. from running .github/scripts/version_check.py)
+__pycache__/
+*.pyc
+
 # Editor / OS noise
 .DS_Store
 *.swp

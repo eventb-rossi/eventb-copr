@@ -1,0 +1,63 @@
+name: sanity
+
+# Basic RPM sanity checks on every push / PR (the analog of gentoo-overlay's
+# pkgcheck). Offline and fast: parse every spec and rpmlint it. A full SRPM /
+# mock build is intentionally out of scope here — it would download every
+# Source0 (including the ~235 MB prob2-ui jar) plus the Adoptium JDK 21.
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths-ignore:
+      - 'README.md'
+      - '.github/**'
+  pull_request:
+    branches: [main]
+    paths-ignore:
+      - 'README.md'
+      - '.github/**'
+
+permissions:
+  contents: read
+
+jobs:
+  rpm-sanity:
+    runs-on: ubuntu-latest
+    container: fedora:latest
+    steps:
+      # Install git BEFORE checkout so actions/checkout can do a real clone, then
+      # the RPM tooling. rpmlint pulls rpm-build (rpmspec) in as a dependency.
+      - name: Install tooling
+        run: dnf -y install --setopt=install_weak_deps=False git rpmlint rpm-build
+
+      - uses: actions/checkout@v6
+
+      - name: Parse every spec (rpmspec -P)
+        run: |
+          set -uo pipefail
+          fail=0
+          for spec in ./*/*.spec; do
+            echo "::group::rpmspec -P $spec"
+            if rpmspec -P "$spec" >/dev/null; then
+              echo "OK: $spec"
+            else
+              echo "::error file=$spec::$spec failed to parse"
+              fail=1
+            fi
+            echo "::endgroup::"
+          done
+          exit "$fail"
+
+      - name: rpmlint (errors-only gate)
+        run: |
+          set -uo pipefail
+          # Filter accepted warnings via the project baseline (-c merges with the
+          # shipped Fedora config; -r/rpmlintrc does not apply Filters).
+          out="$(rpmlint -c .rpmlint.toml ./*/*.spec 2>&1)"
+          echo "$out"
+          # Warnings are informational; fail only on error-severity diagnostics.
+          if echo "$out" | grep -q ': E: '; then
+            echo "::error::rpmlint reported error-severity diagnostics (see log above)"
+            exit 1
+          fi
