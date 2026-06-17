@@ -15,7 +15,7 @@
 
 Name:           rodin
 Version:        3.9
-Release:        2%{?dist}
+Release:        3%{?dist}
 Summary:        IDE for formal modelling and verification with Event-B
 
 # Eclipse platform components are EPL-2.0; the Rodin-specific plugins are EPL-1.0.
@@ -47,6 +47,11 @@ Java 17 or newer.
 %autosetup -n %{name}
 cp -p "$(find features -name 'epl-2.0.html' | head -1)" epl-2.0.html
 
+# Rodin's Eclipse UI has no working dark theme: pin the e4 CSS light theme so
+# Eclipse-drawn widgets stay light regardless of the desktop theme. The property
+# must follow -vmargs to reach the JVM.
+sed -i '/^-vmargs$/a -Dorg.eclipse.e4.ui.css.swt.theme=org.eclipse.e4.ui.css.theme.e4_default' rodin.ini
+
 %build
 # Nothing to build; this is a repackaged binary distribution.
 
@@ -60,6 +65,9 @@ rm -f %{buildroot}%{rodindir}/epl-2.0.html
 install -dm 0755 %{buildroot}%{_bindir}
 cat > %{buildroot}%{_bindir}/%{name} <<'EOF'
 #!/bin/sh
+# Rodin has no working dark theme; force a light GTK theme so native SWT/GTK
+# widgets match the light e4 CSS theme pinned in rodin.ini.
+export GTK_THEME=Adwaita:light
 exec /usr/lib/rodin/rodin "$@"
 EOF
 chmod 0755 %{buildroot}%{_bindir}/%{name}
@@ -92,6 +100,10 @@ desktop-file-validate %{buildroot}%{_datadir}/applications/%{name}.desktop
 %{_datadir}/applications/%{name}.desktop
 
 %changelog
+* Thu Jun 18 2026 Denis Efremov <efremov@linux.com> - 3.9-3
+- Force light theme (Rodin has no dark theme): pin e4 CSS theme in rodin.ini
+  and export GTK_THEME=Adwaita:light in the launcher
+
 * Sun Jun 14 2026 Denis Efremov <efremov@linux.com> - 3.9-2
 - Install icon into hicolor theme as PNG (fixes missing icon in GNOME)
 
