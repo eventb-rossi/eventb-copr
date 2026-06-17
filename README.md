@@ -110,5 +110,6 @@ Two GitHub Actions workflows (mirroring the `homebrew-tap` and `gentoo-overlay` 
 (the only ecosystem applicable here — spec upstreams are handled by `version-check`).
 
 To let auto-bump PRs re-trigger `sanity` (the default `GITHUB_TOKEN` cannot trigger
-workflows from bot-authored PRs), add a repository secret **`VERSION_BUMP_TOKEN`** — a PAT
-with `Contents` + `Pull requests: write`. Without it the PRs still open, just without CI.
+workflows from bot-authored PRs), the workflow uses the **organization** secret
+**`VERSION_BUMP_TOKEN`** — a PAT with `Contents` + `Pull requests: write`, shared across
+the `eventb-rossi` packaging repos. Without it the PRs still open, just without CI.
