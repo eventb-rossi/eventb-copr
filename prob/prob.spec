@@ -14,7 +14,7 @@
 
 Name:           prob
 Version:        1.15.1
-Release:        1%{?dist}
+Release:        2%{?dist}
 Summary:        Animator, constraint solver and model checker for B, Event-B, CSP, TLA+, Z
 
 License:        EPL-1.0
@@ -26,6 +26,7 @@ Source1:        prob.desktop
 
 ExclusiveArch:  x86_64
 BuildRequires:  desktop-file-utils
+BuildRequires:  ImageMagick
 
 # Parser components (lib/*.jar) need a JRE; the Tcl/Tk GUI binary dlopens
 # libtcl8.6.so / libtk8.6.so, so it needs the Tcl/Tk 8.6 compat packages
@@ -37,6 +38,10 @@ Requires:       tk8
 Requires:       gmp
 Requires:       libuuid
 Requires:       hicolor-icon-theme
+# The %%posttrans/%%postun icon-cache scriptlets call gtk-update-icon-cache.
+# Unlike Rodin (a GTK app that pulls in gtk3), the Tcl/Tk ProB drags in nothing
+# that provides this tool, so require it explicitly.
+Requires:       gtk-update-icon-cache
 # Optional graph and state-space visualisation.
 Recommends:     graphviz
 
@@ -79,21 +84,43 @@ exec %{probdir}/probcli "$@"
 EOF
 chmod 0755 %{buildroot}%{_bindir}/probcli
 
-# Icon and desktop entry.
-install -Dpm 0644 tcl/icons/prob.xpm %{buildroot}%{_datadir}/pixmaps/%{name}.xpm
+# Icon: convert the upstream 128x128 GIF to PNG and install into the hicolor theme.
+for size in 32 48 128; do
+    install -dm 0755 %{buildroot}%{_datadir}/icons/hicolor/${size}x${size}/apps
+    magick convert -resize ${size}x${size} tcl/icons/prob_128.gif \
+        %{buildroot}%{_datadir}/icons/hicolor/${size}x${size}/apps/%{name}.png
+done
+
+# Desktop entry.
 desktop-file-install --dir=%{buildroot}%{_datadir}/applications %{SOURCE1}
 
 %check
 desktop-file-validate %{buildroot}%{_datadir}/applications/%{name}.desktop
+
+%posttrans
+/usr/bin/gtk-update-icon-cache -f -t %{_datadir}/icons/hicolor &>/dev/null || :
+
+%postun
+if [ $1 -eq 0 ]; then
+    /usr/bin/gtk-update-icon-cache -f -t %{_datadir}/icons/hicolor &>/dev/null || :
+fi
 
 %files
 %license licence.txt LICENSE-nauty.txt
 %{_bindir}/%{name}
 %{_bindir}/probcli
 %{probdir}
-%{_datadir}/pixmaps/%{name}.xpm
+%{_datadir}/icons/hicolor/32x32/apps/%{name}.png
+%{_datadir}/icons/hicolor/48x48/apps/%{name}.png
+%{_datadir}/icons/hicolor/128x128/apps/%{name}.png
 %{_datadir}/applications/%{name}.desktop
 
 %changelog
+* Fri Jun 19 2026 Denis Efremov <efremov@linux.com> - 1.15.1-2
+- Install the app icon into the hicolor theme as PNG (converted from the
+  upstream 128x128 prob_128.gif at 32, 48 and 128 px) so Icon=prob resolves
+  under modern GNOME/Wayland; refresh the icon cache via %%posttrans/%%postun.
+  Drop the /usr/share/pixmaps XPM.
+
 * Thu Jun 11 2026 Denis Efremov <efremov@linux.com> - 1.15.1-1
 - Initial package: repackage the upstream ProB Tcl/Tk Linux build (prob + probcli)
