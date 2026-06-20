@@ -33,4 +33,11 @@ Filters = [
     '.*devel-file-in-non-devel-package.*',
     '.*hidden-file-or-dir.*',
     '.*zero-length.*',
+
+    # rossi ships real compiled CLIs (rossi, eventb-language-server) with no man
+    # pages, and rpmlint's dictionary misflags "toolchain" in its Summary /
+    # %description. Both only surface when the built binary RPM is linted; the
+    # toolchain filter is kept narrow so genuine misspellings still show.
+    '.*no-manual-page-for-binary.*',
+    '.*spelling-error.*toolchain.*',
 ]
