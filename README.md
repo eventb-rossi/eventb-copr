@@ -8,7 +8,7 @@ command-line tools for code generation, model checking and validation.
 
 ```sh
 sudo dnf copr enable @eventb-rossi/eventb-copr
-sudo dnf install eventb-checker evbt tlc4b b2program eventb-animate eventb-to-txt
+sudo dnf install eventb-checker evbt tlc4b b2program eventb-animate eventb-to-txt rossi
 ```
 
 ### Command-line tools
@@ -21,6 +21,7 @@ sudo dnf install eventb-checker evbt tlc4b b2program eventb-animate eventb-to-tx
 | `b2program` | [B2Program](https://github.com/favu100/b2program) — generate Java/C++/Python/Rust/TypeScript from high-level B |
 | `eventb-animate` | [eventb-animate](https://github.com/eventb-rossi/eventb-animate) — animate Event-B models with the ProB model checker, no Rodin install |
 | `eventb-to-txt` | [eventb-to-txt](https://github.com/eventb-rossi/eventb-to-txt) — convert Rodin models (`.bum`/`.buc`) to CamilleX plain text |
+| `rossi` | [rossi](https://github.com/eventb-rossi/rossi) — Rust toolchain for Event-B: validate/convert/reformat models (`rossi`) plus an `eventb-language-server` for editors |
 
 ### GUI applications
 
@@ -48,6 +49,7 @@ only one at a time.
 - The command-line Java tools (`eventb-checker`, `evbt`, `tlc4b`, `b2program`,
   `eventb-animate`) pull in a JRE automatically. `evbt` needs Java 22+, the others Java 21+.
 - `eventb-to-txt` is a pure-Python tool; it pulls in `python3` automatically.
+- `rossi` is a self-contained Rust binary with no extra runtime dependencies.
 - **Rodin** needs a system **Java 17 or newer** (it bundles none) and GTK 3.
 - **ProB** (`prob`) needs **Java 8 or newer** and Tcl/Tk 8.6; it pulls in `tk8`,
   `gmp` and `libuuid`, and recommends `graphviz` for graph/state-space visualisation.
@@ -82,6 +84,10 @@ The four Gradle-built tools (`eventb-checker`, `tlc4b`, `b2program`, `eventb-ani
 compile from upstream source: their mock builds enable network access and add the Adoptium
 Temurin repo (for JDK 21, which Fedora no longer ships). The top-level `Makefile` wires this
 up automatically for those targets.
+
+`rossi` likewise compiles from upstream source with Cargo — its mock build enables network
+access (to fetch crate dependencies from crates.io) but needs no extra repo. The top-level
+`Makefile` enables network for the `rossi` target automatically.
 
 ## Maintainers
 

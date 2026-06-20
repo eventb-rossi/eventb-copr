@@ -11,8 +11,9 @@
 #   make all-mock       mock-build every package
 #   make clean
 
-PKGS        := eventb-to-txt evbt eventb-checker tlc4b b2program eventb-animate rodin rodin-rc atelier-b prob prob2-ui
-GRADLE_PKGS := eventb-checker tlc4b b2program eventb-animate   # built from source: need JDK 21 + network
+PKGS        := eventb-to-txt evbt eventb-checker tlc4b b2program eventb-animate rodin rodin-rc atelier-b prob prob2-ui rossi
+NET_PKGS    := eventb-checker tlc4b b2program eventb-animate rossi   # built from source: fetch deps over the network
+GRADLE_PKGS := eventb-checker tlc4b b2program eventb-animate         # NET_PKGS subset that also needs the Adoptium JDK 21
 
 MOCK_ROOT   ?= fedora-44-x86_64
 BUILDDIR    := $(abspath build)
@@ -35,9 +36,10 @@ srpm-%:
 	$(MAKE) -C $* -f $(COPRMK) srpm outdir=$(SRPMDIR) spec=$*.spec
 
 # --- Mock build -------------------------------------------------------------
-# Gradle packages build in a chroot that layers in the Adoptium repo + network.
-$(addprefix mock-,$(GRADLE_PKGS)): MOCK_R   := $(ADOPTIUM_ROOT)
-$(addprefix mock-,$(GRADLE_PKGS)): MOCK_NET := --enable-network
+# Source-built packages need network to fetch their dependencies; the Gradle
+# (JVM) subset additionally layers in the Adoptium JDK 21 repo.
+$(addprefix mock-,$(NET_PKGS)): MOCK_NET := --enable-network
+$(addprefix mock-,$(GRADLE_PKGS)): MOCK_R := $(ADOPTIUM_ROOT)
 $(addprefix mock-,$(GRADLE_PKGS)): adoptium-config
 
 mock-%: srpm-%

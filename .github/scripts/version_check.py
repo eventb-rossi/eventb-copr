@@ -57,6 +57,8 @@ PACKAGES = [
      "source": {"type": "github", "repo": "eventb-rossi/eventb-checker"}},
     {"pkg": "eventb-animate", "mode": "bump",
      "source": {"type": "github", "repo": "eventb-rossi/eventb-animate"}},
+    {"pkg": "rossi", "mode": "bump",
+     "source": {"type": "github", "repo": "eventb-rossi/rossi"}},
     {"pkg": "evbt", "mode": "bump",
      "source": {"type": "github", "repo": "viklauverk/EventBTool"}},
     # Both detect the version from the same host the distfile lives on, so a
