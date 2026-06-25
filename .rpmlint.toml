@@ -40,4 +40,13 @@ Filters = [
     # toolchain filter is kept narrow so genuine misspellings still show.
     '.*no-manual-page-for-binary.*',
     '.*spelling-error.*toolchain.*',
+
+    # rodin-headless: "deps" is its --check-deps flag in %description; anchor to
+    # the exact 'deps' token so real misspellings elsewhere still show.
+    ".*spelling-error.*'deps'.*",
+    # rodin-headless ships its Docker build context (data) plus a sourced library,
+    # which carry shebangs but are intentionally non-executable. Scoped to those
+    # exact paths so a dropped +x on an *executed* libexec script still flags.
+    '.*non-executable-script.*/usr/share/rodin-headless/.*',
+    '.*non-executable-script.*/usr/libexec/rodin-headless/rodin-headless-lib\.sh.*',
 ]

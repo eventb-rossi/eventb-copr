@@ -22,6 +22,7 @@ sudo dnf install eventb-checker evbt tlc4b b2program eventb-animate eventb-to-tx
 | `eventb-animate` | [eventb-animate](https://github.com/eventb-rossi/eventb-animate) — animate Event-B models with the ProB model checker, no Rodin install |
 | `eventb-to-txt` | [eventb-to-txt](https://github.com/eventb-rossi/eventb-to-txt) — convert Rodin models (`.bum`/`.buc`) to CamilleX plain text |
 | `rossi` | [rossi](https://github.com/eventb-rossi/rossi) — Rust toolchain for Event-B: validate/convert/reformat models (`rossi`) plus an `eventb-language-server` for editors |
+| `rodin-headless` | [rodin-headless](https://github.com/eventb-rossi/rodin-headless) — drive the Rodin Platform headlessly to build, model-check and prove Event-B models |
 
 ### GUI applications
 
@@ -50,6 +51,10 @@ only one at a time.
   `eventb-animate`) pull in a JRE automatically. `evbt` needs Java 22+, the others Java 21+.
 - `eventb-to-txt` is a pure-Python tool; it pulls in `python3` automatically.
 - `rossi` is a self-contained Rust binary with no extra runtime dependencies.
+- `rodin-headless` ships no Rodin/ProB/Java and pulls in no runtime dependencies:
+  run `rodin-headless-install` for native mode (needs a JDK 17+, Xvfb and GTK 3) or
+  point it at a Docker/Podman container. `rodin-headless-install --check-deps` reports
+  what is missing.
 - **Rodin** needs a system **Java 17 or newer** (it bundles none) and GTK 3.
 - **ProB** (`prob`) needs **Java 8 or newer** and Tcl/Tk 8.6; it pulls in `tk8`,
   `gmp` and `libuuid`, and recommends `graphviz` for graph/state-space visualisation.

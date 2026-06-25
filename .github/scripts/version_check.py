@@ -61,6 +61,8 @@ PACKAGES = [
      "source": {"type": "github", "repo": "eventb-rossi/rossi"}},
     {"pkg": "evbt", "mode": "bump",
      "source": {"type": "github", "repo": "viklauverk/EventBTool"}},
+    {"pkg": "rodin-headless", "mode": "bump",
+     "source": {"type": "github", "repo": "eventb-rossi/rodin-headless"}},
     # Both detect the version from the same host the distfile lives on, so a
     # detected version implies its release directory (and artifact) exists.
     {"pkg": "prob", "mode": "bump",

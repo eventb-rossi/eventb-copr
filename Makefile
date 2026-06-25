@@ -11,7 +11,7 @@
 #   make all-mock       mock-build every package
 #   make clean
 
-PKGS        := eventb-to-txt evbt eventb-checker tlc4b b2program eventb-animate rodin rodin-rc atelier-b prob prob2-ui rossi
+PKGS        := eventb-to-txt evbt eventb-checker tlc4b b2program eventb-animate rodin rodin-rc atelier-b prob prob2-ui rossi rodin-headless
 NET_PKGS    := eventb-checker tlc4b b2program eventb-animate rossi   # built from source: fetch deps over the network
 GRADLE_PKGS := eventb-checker tlc4b b2program eventb-animate         # NET_PKGS subset that also needs the Adoptium JDK 21
 
