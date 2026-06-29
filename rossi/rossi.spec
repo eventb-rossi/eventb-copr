@@ -1,6 +1,6 @@
 Name:           rossi
 Version:        0.1.3
-Release:        1%{?dist}
+Release:        2%{?dist}
 Summary:        Rust toolchain for Event-B: parser, static checker, CLI, and language server
 
 License:        Apache-2.0 OR MIT
@@ -34,6 +34,18 @@ cargo build --release --locked
 install -Dpm 0755 target/release/rossi %{buildroot}%{_bindir}/rossi
 install -Dpm 0755 target/release/eventb-language-server %{buildroot}%{_bindir}/eventb-language-server
 
+# Shell completions, generated from the freshly built binary so they always
+# match the installed CLI version (rossi completions <shell> -> stdout, via
+# clap_complete). The dir macros come from redhat-rpm-config, always present in
+# the buildroot. Filenames follow each shell's lookup convention: the command
+# name for bash, _-prefixed for zsh, .fish suffix for fish.
+install -d %{buildroot}%{bash_completions_dir} \
+           %{buildroot}%{zsh_completions_dir} \
+           %{buildroot}%{fish_completions_dir}
+./target/release/rossi completions bash > %{buildroot}%{bash_completions_dir}/rossi
+./target/release/rossi completions zsh  > %{buildroot}%{zsh_completions_dir}/_rossi
+./target/release/rossi completions fish > %{buildroot}%{fish_completions_dir}/rossi.fish
+
 %check
 # Smoke test the freshly built binaries (mirrors the Homebrew formula's test).
 ./target/release/rossi --version
@@ -44,8 +56,14 @@ install -Dpm 0755 target/release/eventb-language-server %{buildroot}%{_bindir}/e
 %doc README.md
 %{_bindir}/rossi
 %{_bindir}/eventb-language-server
+%{bash_completions_dir}/rossi
+%{zsh_completions_dir}/_rossi
+%{fish_completions_dir}/rossi.fish
 
 %changelog
+* Mon Jun 29 2026 Denis Efremov <efremov@linux.com> - 0.1.3-2
+- Install bash, zsh, and fish shell completions
+
 * Mon Jun 29 2026 Denis Efremov <efremov@linux.com> - 0.1.3-1
 - Update to 0.1.3
 
