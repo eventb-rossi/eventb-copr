@@ -1,5 +1,5 @@
 Name:           rossi
-Version:        0.1.2
+Version:        0.1.3
 Release:        1%{?dist}
 Summary:        Rust toolchain for Event-B: parser, static checker, CLI, and language server
 
@@ -46,6 +46,9 @@ install -Dpm 0755 target/release/eventb-language-server %{buildroot}%{_bindir}/e
 %{_bindir}/eventb-language-server
 
 %changelog
+* Mon Jun 29 2026 Denis Efremov <efremov@linux.com> - 0.1.3-1
+- Update to 0.1.3
+
 * Fri Jun 26 2026 Denis Efremov <efremov@linux.com> - 0.1.2-1
 - Update to 0.1.2
 
