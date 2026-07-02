@@ -29,7 +29,7 @@ sudo dnf install eventb-checker evbt tlc4b b2program eventb-animate eventb-to-tx
 | Package | Arch | Description |
 | ------- | ---- | ----------- |
 | `rodin` | x86_64 | Rodin Platform — Event-B IDE (stable) |
-| `rodin-rc` | x86_64, aarch64 | Rodin Platform — release candidate (conflicts with `rodin`) |
+| `rodin-rc` | x86_64 | Rodin Platform — release candidate (conflicts with `rodin`) |
 | `atelier-b` | x86_64 | Atelier B Community Edition — IDE for the B method |
 | `prob` | x86_64 | [ProB](https://prob.hhu.de/) — animator/model checker; Tcl/Tk GUI (`prob`) plus the `probcli` CLI |
 | `prob2-ui` | noarch | [ProB2-UI](https://prob.hhu.de/w/index.php/ProB2-UI) — JavaFX animator and model checker built on ProB |
@@ -55,7 +55,7 @@ only one at a time.
   run `rodin-headless-install` for native mode (needs a JDK 17+, Xvfb and GTK 3) or
   point it at a Docker/Podman container. `rodin-headless-install --check-deps` reports
   what is missing.
-- **Rodin** needs a system **Java 17 or newer** (it bundles none) and GTK 3.
+- **Rodin** needs a system **Java 21 or newer** (it bundles none) and GTK 3.
 - **ProB** (`prob`) needs **Java 8 or newer** and Tcl/Tk 8.6; it pulls in `tk8`,
   `gmp` and `libuuid`, and recommends `graphviz` for graph/state-space visualisation.
 - **ProB2-UI** (`prob2-ui`) needs **Java 21 or newer**, GTK 3 and the X11/OpenGL

@@ -15,7 +15,7 @@
 
 Name:           rodin-rc
 Version:        3.10
-Release:        0.3.RC2%{?dist}
+Release:        0.4.RC2%{?dist}
 Summary:        Rodin Platform release candidate (Event-B IDE)
 
 License:        EPL-1.0 AND EPL-2.0
@@ -33,7 +33,7 @@ BuildRequires:  ImageMagick
 # paths as the stable rodin package, so the two cannot be installed together.
 Conflicts:      rodin
 
-Requires:       java-headless >= 1:17
+Requires:       java-headless >= 1:21
 Requires:       gtk3
 Requires:       hicolor-icon-theme
 Recommends:     webkit2gtk4.1
@@ -41,7 +41,7 @@ Recommends:     webkit2gtk4.1
 %description
 The Rodin Platform is an Eclipse-based IDE for Event-B. This package provides
 the 3.10-RC2 release candidate, repackaged from the official upstream Linux
-build. It bundles no Java runtime and needs a system Java 17 or newer. It
+build. It bundles no Java runtime and needs a system Java 21 or newer. It
 installs as a drop-in replacement for the stable "rodin" package (only one at a
 time).
 
@@ -101,6 +101,9 @@ desktop-file-validate %{buildroot}%{_datadir}/applications/rodin.desktop
 %{_datadir}/applications/rodin.desktop
 
 %changelog
+* Thu Jul 02 2026 Denis Efremov <efremov@linux.com> - 3.10-0.4.RC2
+- Raise the runtime baseline to Java 21 (matches upstream 3.10-RC2)
+
 * Thu Jun 18 2026 Denis Efremov <efremov@linux.com> - 3.10-0.3.RC2
 - Force light theme (Rodin has no dark theme): pin e4 CSS theme in rodin.ini
   and export GTK_THEME=Adwaita:light in the launcher

@@ -1,5 +1,5 @@
 %global rodindir   %{_prefix}/lib/%{name}
-%global buildid    3.9.0.202406100806-9b87fe13d
+%global buildid    3.10.0.202607010932-881664d81
 %global tarball    rodin-%{buildid}-linux.gtk.x86_64.tar.gz
 
 # Repackaged prebuilt Eclipse RCP product: keep the upstream binaries intact
@@ -14,15 +14,15 @@
 %global __requires_exclude_from ^%{rodindir}/.*$
 
 Name:           rodin
-Version:        3.9
-Release:        3%{?dist}
+Version:        3.10
+Release:        1%{?dist}
 Summary:        IDE for formal modelling and verification with Event-B
 
 # Eclipse platform components are EPL-2.0; the Rodin-specific plugins are EPL-1.0.
 License:        EPL-1.0 AND EPL-2.0
 URL:            https://wiki.event-b.org/
 # The filename embeds an opaque build id (timestamp + git hash); update it on
-# version bumps. Upstream ships a Linux x86_64 build only for the 3.9 release.
+# version bumps. Upstream ships a Linux x86_64 build only for the 3.10 release.
 Source0:        https://downloads.sourceforge.net/rodin-b-sharp/Core_Rodin_Platform/%{version}/%{tarball}
 Source1:        rodin.desktop
 
@@ -30,8 +30,8 @@ ExclusiveArch:  x86_64
 BuildRequires:  desktop-file-utils
 BuildRequires:  ImageMagick
 
-# Rodin bundles no JRE and requires Java 17 or newer.
-Requires:       java-headless >= 1:17
+# Rodin bundles no JRE and requires Java 21 or newer.
+Requires:       java-headless >= 1:21
 Requires:       gtk3
 Requires:       hicolor-icon-theme
 # Browser-backed views (e.g. some help/preview widgets) need WebKitGTK.
@@ -41,7 +41,7 @@ Recommends:     webkit2gtk4.1
 The Rodin Platform is an Eclipse-based IDE for Event-B that provides effective
 support for refinement and mathematical proof. This package repackages the
 official upstream Linux build; it bundles no Java runtime and needs a system
-Java 17 or newer.
+Java 21 or newer.
 
 %prep
 %autosetup -n %{name}
@@ -100,6 +100,9 @@ desktop-file-validate %{buildroot}%{_datadir}/applications/%{name}.desktop
 %{_datadir}/applications/%{name}.desktop
 
 %changelog
+* Thu Jul 02 2026 Denis Efremov <efremov@linux.com> - 3.10-1
+- Update to 3.10 (raises the runtime baseline to Java 21)
+
 * Thu Jun 18 2026 Denis Efremov <efremov@linux.com> - 3.9-3
 - Force light theme (Rodin has no dark theme): pin e4 CSS theme in rodin.ini
   and export GTK_THEME=Adwaita:light in the launcher
