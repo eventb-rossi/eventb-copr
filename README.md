@@ -8,7 +8,7 @@ command-line tools for code generation, model checking and validation.
 
 ```sh
 sudo dnf copr enable @eventb-rossi/eventb-copr
-sudo dnf install eventb-checker evbt tlc4b b2program eventb-animate eventb-to-txt rossi
+sudo dnf install eventb-checker evbt tlc4b b2program eventb-animate eventb-to-txt ltsmin rossi
 ```
 
 ### Command-line tools
@@ -21,6 +21,7 @@ sudo dnf install eventb-checker evbt tlc4b b2program eventb-animate eventb-to-tx
 | `b2program` | [B2Program](https://github.com/favu100/b2program) — generate Java/C++/Python/Rust/TypeScript from high-level B |
 | `eventb-animate` | [eventb-animate](https://github.com/eventb-rossi/eventb-animate) — animate Event-B models with the ProB model checker, no Rodin install |
 | `eventb-to-txt` | [eventb-to-txt](https://github.com/eventb-rossi/eventb-to-txt) — convert Rodin models (`.bum`/`.buc`) to CamilleX plain text |
+| `ltsmin` | [LTSmin](https://ltsmin.utwente.nl/) — language-independent model checking with sequential, multi-core, symbolic and distributed backends |
 | `rossi` | [rossi](https://github.com/eventb-rossi/rossi) — Rust toolchain for Event-B: validate/convert/reformat models (`rossi`) plus an `eventb-language-server` for editors |
 | `rodin-headless` | [rodin-headless](https://github.com/eventb-rossi/rodin-headless) — drive the Rodin Platform headlessly to build, model-check and prove Event-B models |
 
@@ -50,6 +51,12 @@ only one at a time.
 - The command-line Java tools (`eventb-checker`, `evbt`, `tlc4b`, `b2program`,
   `eventb-animate`) pull in a JRE automatically. `evbt` needs Java 22+, the others Java 21+.
 - `eventb-to-txt` is a pure-Python tool; it pulls in `python3` automatically.
+- `ltsmin` repackages the complete upstream x86_64 release and requires the
+  ncurses 5 compatibility libraries for its bundled DiVinE helper. It recommends
+  `prob` for B/Event-B input and Java plus GCC for the SpinS Promela front-end;
+  these weak dependencies can be omitted for a smaller core installation. When
+  `prob` is installed, its `-mc_with_lts_seq`/`-mc_with_lts_sym` commands find
+  the packaged LTSmin backends automatically.
 - `rossi` is a self-contained Rust binary with no extra runtime dependencies.
 - `rodin-headless` ships no Rodin/ProB/Java and pulls in no runtime dependencies:
   run `rodin-headless-install` for native mode (needs a JDK 17+, Xvfb and GTK 3) or
@@ -111,7 +118,8 @@ Two GitHub Actions workflows (mirroring the `homebrew-tap` and `gentoo-overlay` 
   clean `%{version}`-templated `Source0` are auto-bumped into a pull request (the spec's
   `Version:`/`Release:`/`%changelog` are rewritten — no source artifact is committed, Copr
   re-fetches `Source0` at build time), while packages with opaque build ids or
-  non-derivable URLs (`rodin`, `rodin-rc`, `atelier-b`, `tlc4b`, `eventb-to-txt`) get a
+  non-derivable URLs or prebuilt releases needing compatibility review (`rodin`,
+  `rodin-rc`, `atelier-b`, `tlc4b`, `eventb-to-txt`, `ltsmin`) get a
   tracking issue labelled `version-bump`. `b2program` (pinned master commit) is not tracked.
 - **`sanity`** — runs on every push/PR. In a Fedora container it parses every spec
   (`rpmspec -P`) and runs `rpmlint -c .rpmlint.toml`, failing only on error-severity

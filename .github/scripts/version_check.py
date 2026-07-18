@@ -87,6 +87,10 @@ PACKAGES = [
     {"pkg": "atelier-b", "mode": "track",
      "source": {"type": "atelierb",
                 "url": "https://www.atelierb.eu/en/atelier-b-support-maintenance/download-atelier-b/"}},
+    # LTSmin is a prebuilt x86_64 distribution with bundled helpers. A new
+    # release needs manual ABI, dependency, license and archive-layout review.
+    {"pkg": "ltsmin", "mode": "track",
+     "source": {"type": "github", "repo": "utwente-fmt/ltsmin"}},
 
     {"pkg": "b2program", "mode": "skip", "source": {}},
 ]

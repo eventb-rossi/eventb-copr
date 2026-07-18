@@ -10,7 +10,8 @@
 # Each Filters entry is a regex searched against a full rpmlint output line.
 
 Filters = [
-    # Repackaged prebuilt distributions (rodin, prob, atelier-b, prob2-ui, evbt)
+    # Repackaged prebuilt distributions (rodin, prob, atelier-b, prob2-ui, evbt,
+    # ltsmin)
     # and the Gradle-built jars have nothing meaningful to run in a %check that
     # the %install/desktop validation doesn't already cover.
     '.*no-%check-section.*',
@@ -33,6 +34,16 @@ Filters = [
     '.*devel-file-in-non-devel-package.*',
     '.*hidden-file-or-dir.*',
     '.*zero-length.*',
+
+    # ltsmin repackages upstream's 2018 ELF binaries. They cannot be rebuilt as
+    # PIE without losing the legacy symbolic backends, and rpmlint's setgroups
+    # diagnostic is a false positive on the prob2lts privilege-drop sequence.
+    '^ltsmin\..*position-independent-executable-suggested.*',
+    '^ltsmin\..*missing-call-to-setgroups-before-setuid.*/usr/bin/prob2lts-.*',
+    '^ltsmin\..*binary-or-shlib-calls-gethostbyname.*/usr/bin/.*2lts-.*',
+    # The bundled ltl2ba notice and canonical GPL-2.0-or-later text retain the
+    # historical FSF postal address; preserve upstream/canonical texts intact.
+    '^ltsmin\..*incorrect-fsf-address.*/usr/share/licenses/ltsmin/.*',
 
     # rossi ships real compiled CLIs (rossi, eventb-language-server) with no man
     # pages, and rpmlint's dictionary misflags "toolchain" in its Summary /
