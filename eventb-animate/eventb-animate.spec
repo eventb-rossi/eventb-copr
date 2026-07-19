@@ -1,5 +1,5 @@
 Name:           eventb-animate
-Version:        6.0
+Version:        6.1
 Release:        1%{?dist}
 Summary:        Animate Event-B models with the ProB model checker, no Rodin required
 
@@ -64,6 +64,9 @@ chmod 0755 %{buildroot}%{_bindir}/%{name}
 %{_bindir}/%{name}
 
 %changelog
+* Sun Jul 19 2026 Denis Efremov <efremov@linux.com> - 6.1-1
+- Update to 6.1
+
 * Tue Jul 07 2026 Denis Efremov <efremov@linux.com> - 6.0-1
 - Update to 6.0
 
