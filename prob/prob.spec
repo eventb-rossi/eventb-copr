@@ -13,8 +13,8 @@
 %global __requires_exclude_from ^%{probdir}/.*$
 
 Name:           prob
-Version:        1.15.1
-Release:        2%{?dist}
+Version:        1.16.0
+Release:        1%{?dist}
 Summary:        Animator, constraint solver and model checker for B, Event-B, CSP, TLA+, Z
 
 License:        EPL-1.0
@@ -116,6 +116,9 @@ fi
 %{_datadir}/applications/%{name}.desktop
 
 %changelog
+* Thu Aug 06 2026 Denis Efremov <efremov@linux.com> - 1.16.0-1
+- Update to 1.16.0
+
 * Fri Jun 19 2026 Denis Efremov <efremov@linux.com> - 1.15.1-2
 - Install the app icon into the hicolor theme as PNG (converted from the
   upstream 128x128 prob_128.gif at 32, 48 and 128 px) so Icon=prob resolves
