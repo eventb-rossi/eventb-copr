@@ -1,6 +1,6 @@
 Name:           rossi
 Version:        0.1.9
-Release:        1%{?dist}
+Release:        2%{?dist}
 Summary:        Rust toolchain for Event-B: parser, static checker, CLI, and language server
 
 License:        Apache-2.0 OR MIT
@@ -13,6 +13,9 @@ Source0:        https://github.com/eventb-rossi/rossi/archive/refs/tags/v%{versi
 BuildRequires:  cargo
 # zstd-sys and other -sys crates compile bundled C sources via the cc crate.
 BuildRequires:  gcc
+# llvm-profdata, to merge PGO profiles in %build. Fedora keeps rustc and llvm
+# in lockstep, so the system llvm package's LLVM major always matches rustc's.
+BuildRequires:  llvm
 
 %description
 Rossi is a Rust toolchain for Event-B providing a parser, a static checker, a
@@ -27,8 +30,28 @@ editor integration over the Language Server Protocol.
 # Keep cargo's registry/cache inside the build tree; pick up Fedora's build
 # flags when rust-srpm-macros defines them (empty otherwise).
 export CARGO_HOME="$(pwd)/.cargo"
-export RUSTFLAGS="%{?build_rustflags}"
-cargo build --release --locked
+base_rustflags="%{?build_rustflags}"
+
+# Two-phase PGO build, mirroring rossi's own release workflow
+# (scripts/pgo-train.sh + -Cprofile-generate/-Cprofile-use): build an
+# instrumented rossi, train it on the in-repo example models, merge the
+# profile, then rebuild both binaries reading it back. The instrument and
+# profile-use invocations must differ ONLY in that RUSTFLAGS value -- any
+# other difference changes -Cmetadata, which is baked into the mangled
+# symbol names rustc matches profiles by, and the profile silently stops
+# applying. Older source tags don't carry the training script yet, so fall
+# back to a plain build when it's absent.
+if [ -x scripts/pgo-train.sh ] && [ -d crates/rossi/examples ]; then
+    pgodir="$(pwd)/pgo-data"
+    RUSTFLAGS="$base_rustflags -Cprofile-generate=$pgodir" \
+      cargo build --release --locked --bin rossi
+    ./scripts/pgo-train.sh target/release/rossi
+    llvm-profdata merge -o pgo-merged.profdata "$pgodir"
+    RUSTFLAGS="$base_rustflags -Cprofile-use=$(pwd)/pgo-merged.profdata" \
+      cargo build --release --locked --bin rossi --bin eventb-language-server
+else
+    RUSTFLAGS="$base_rustflags" cargo build --release --locked
+fi
 
 %install
 install -Dpm 0755 target/release/rossi %{buildroot}%{_bindir}/rossi
@@ -61,6 +84,10 @@ install -d %{buildroot}%{bash_completions_dir} \
 %{fish_completions_dir}/rossi.fish
 
 %changelog
+* Sun Aug 23 2026 Denis Efremov <efremov@linux.com> - 0.1.9-2
+- Build with PGO when the source tarball carries scripts/pgo-train.sh, mirroring
+  upstream's release workflow (falls back to a plain build on older tags)
+
 * Tue Aug 18 2026 Denis Efremov <efremov@linux.com> - 0.1.9-1
 - Update to 0.1.9
 
