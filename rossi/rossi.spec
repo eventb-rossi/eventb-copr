@@ -1,6 +1,6 @@
 Name:           rossi
-Version:        0.1.9
-Release:        2%{?dist}
+Version:        0.2.0
+Release:        1%{?dist}
 Summary:        Rust toolchain for Event-B: parser, static checker, CLI, and language server
 
 License:        Apache-2.0 OR MIT
@@ -84,6 +84,9 @@ install -d %{buildroot}%{bash_completions_dir} \
 %{fish_completions_dir}/rossi.fish
 
 %changelog
+* Sun Aug 23 2026 Denis Efremov <efremov@linux.com> - 0.2.0-1
+- Update to 0.2.0
+
 * Sun Aug 23 2026 Denis Efremov <efremov@linux.com> - 0.1.9-2
 - Build with PGO when the source tarball carries scripts/pgo-train.sh, mirroring
   upstream's release workflow (falls back to a plain build on older tags)
