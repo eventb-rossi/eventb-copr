@@ -13,7 +13,7 @@
 %global __requires_exclude_from ^%{probdir}/.*$
 
 Name:           prob
-Version:        1.16.0
+Version:        1.16.1
 Release:        1%{?dist}
 Summary:        Animator, constraint solver and model checker for B, Event-B, CSP, TLA+, Z
 
@@ -116,6 +116,9 @@ fi
 %{_datadir}/applications/%{name}.desktop
 
 %changelog
+* Fri Aug 28 2026 Denis Efremov <efremov@linux.com> - 1.16.1-1
+- Update to 1.16.1
+
 * Thu Aug 06 2026 Denis Efremov <efremov@linux.com> - 1.16.0-1
 - Update to 1.16.0
 
