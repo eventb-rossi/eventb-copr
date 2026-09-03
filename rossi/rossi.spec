@@ -1,5 +1,5 @@
 Name:           rossi
-Version:        0.2.0
+Version:        0.2.1
 Release:        1%{?dist}
 Summary:        Rust toolchain for Event-B: parser, static checker, CLI, and language server
 
@@ -84,6 +84,9 @@ install -d %{buildroot}%{bash_completions_dir} \
 %{fish_completions_dir}/rossi.fish
 
 %changelog
+* Thu Sep 03 2026 Denis Efremov <efremov@linux.com> - 0.2.1-1
+- Update to 0.2.1
+
 * Sun Aug 23 2026 Denis Efremov <efremov@linux.com> - 0.2.0-1
 - Update to 0.2.0
 
