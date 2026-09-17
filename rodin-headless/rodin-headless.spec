@@ -1,5 +1,5 @@
 Name:           rodin-headless
-Version:        4.0
+Version:        5.0
 Release:        1%{?dist}
 Summary:        Headless toolchain to build, model-check, and prove Rodin Event-B models
 
@@ -55,5 +55,8 @@ that is missing.
 %{_mandir}/man1/rodin-headless-install.1*
 
 %changelog
+* Thu Sep 17 2026 Denis Efremov <efremov@linux.com> - 5.0-1
+- Update to 5.0
+
 * Thu Jun 25 2026 Denis Efremov <efremov@linux.com> - 4.0-1
 - Initial package
