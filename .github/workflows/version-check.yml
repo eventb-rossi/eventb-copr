@@ -7,8 +7,9 @@ name: version-check
 #   * "track" packages (opaque build id, vendored, or non-derivable URL) ->
 #     open/refresh a tracking issue.
 # Detection and the spec rewrite live in .github/scripts/version_check.py.
-# (RPM specs carry no source checksums, so a bump never touches the artifacts;
-#  Copr re-downloads Source0 via spectool at build time.)
+# Missing Source0 artifacts fail the bump job; ProB2-UI also validates the jar
+# embedded in its Debian archive. No artifact is committed; Copr downloads it
+# again via spectool at build time.
 
 on:
   schedule:
@@ -39,6 +40,10 @@ jobs:
       - uses: actions/setup-python@v7
         with:
           python-version: '3.12'
+      - name: Install release validation tooling
+        run: sudo apt-get update && sudo apt-get install -y libarchive-tools zstd
+      - name: Test release validation
+        run: python3 -m unittest discover -s .github/scripts -p 'test_version_check.py'
       - name: Scan upstreams
         id: scan
         env:
@@ -66,6 +71,9 @@ jobs:
       - uses: actions/setup-python@v7
         with:
           python-version: '3.12'
+      - name: Install ProB2-UI validation tooling
+        if: matrix.pkg == 'prob2-ui'
+        run: sudo apt-get update && sudo apt-get install -y libarchive-tools
       - name: Bump ${{ matrix.pkg }}
         id: bump
         env:
@@ -100,8 +108,11 @@ jobs:
             `%changelog` entry prepended. No source artifact is committed — Copr
             re-downloads `Source0` via `spectool` at build time.
 
+            A confirmed missing `Source0` fails the bump job. Inconclusive network
+            checks warn for ordinary packages; ProB2-UI requires a downloaded,
+            validated Debian artifact containing its launchable Linux JAR.
+
             Review checklist:
-            - [ ] `Source0` still resolves for the new version (sanity CI checks the spec parses)
             - [ ] Build still works (deps / build steps unchanged for this release)
             - [ ] `%changelog` entry reads correctly
 

@@ -20,6 +20,7 @@ Subcommands:
   check        Print a JSON report of every package (current/latest/outdated).
   bump <pkg>   For one outdated "bump" package, rewrite its spec in place.
                No-op (exit 0) if already up to date.
+               Fail (exit 1) if the candidate source artifact is rejected.
 """
 
 from __future__ import annotations
@@ -28,9 +29,13 @@ import datetime
 import json
 import os
 import re
+import shutil
+import subprocess
 import sys
+import tempfile
 import urllib.error
 import urllib.request
+import zipfile
 from pathlib import Path
 
 REPO_ROOT = Path(os.environ.get("COPR_ROOT") or Path(__file__).resolve().parents[2])
@@ -63,8 +68,7 @@ PACKAGES = [
      "source": {"type": "github", "repo": "viklauverk/EventBTool"}},
     {"pkg": "rodin-headless", "mode": "bump",
      "source": {"type": "github", "repo": "eventb-rossi/rodin-headless"}},
-    # Both detect the version from the same host the distfile lives on, so a
-    # detected version implies its release directory (and artifact) exists.
+    # Detect versions from the release index; validate the artifact at bump time.
     {"pkg": "prob", "mode": "bump",
      "source": {"type": "apache_index",
                 "url": "https://stups.hhu-hosting.de/downloads/prob/tcltk/releases/"}},
@@ -351,6 +355,42 @@ def url_reachable(url: str, timeout: int = 60) -> bool | None:
     return None
 
 
+def validate_prob2_deb(url: str, version: str) -> None:
+    """Require the launchable Linux jar before accepting a Debian release."""
+    with tempfile.TemporaryDirectory(prefix="prob2-ui-bump-") as work:
+        root = Path(work)
+        archive = root / "release.deb"
+        req = urllib.request.Request(url, headers=UA)
+        with urllib.request.urlopen(req, timeout=60) as response, archive.open("wb") as output:
+            shutil.copyfileobj(response, output)
+
+        # Extract just the payload and jar, never the bundled JRE or launcher.
+        data = root / "data.tar.zst"
+        jar = root / "prob2-ui.jar"
+        member = f"./opt/prob2-ui/lib/app/prob2-ui-{version}-linux.jar"
+        for source, name, dest in ((archive, "data.tar.zst", data), (data, member, jar)):
+            with dest.open("wb") as output:
+                try:
+                    subprocess.run(["bsdtar", "-xOf", str(source), name],
+                                   stdout=output, stderr=subprocess.PIPE, check=True)
+                except subprocess.CalledProcessError as exc:
+                    raise ValueError(f"cannot extract {name}: "
+                                     f"{exc.stderr.decode('utf-8', 'replace').strip()}") from exc
+
+        with zipfile.ZipFile(jar) as zf:
+            corrupt = zf.testzip()
+            if corrupt is not None:
+                raise ValueError(f"jar has a corrupt entry: {corrupt}")
+            manifest = zf.read("META-INF/MANIFEST.MF").decode("utf-8")
+            if "Main-Class: de.prob2.ui.Main" not in manifest.splitlines():
+                raise ValueError("jar has no ProB2-UI Main-Class")
+            for required in ("de/prob2/ui/Main.class", "de/prob2/ui/ProB_Icon.png"):
+                try:
+                    zf.getinfo(required)
+                except KeyError:
+                    raise ValueError(f"jar is missing {required}") from None
+
+
 # --- subcommands -----------------------------------------------------------
 def cmd_check() -> int:
     report = []
@@ -423,20 +463,26 @@ def cmd_bump(pkg_name: str) -> int:
     path = spec_path(pkg_name)
     text = path.read_text()
 
-    # Belt-and-suspenders: confirm the new artifact exists before opening a PR.
-    # A definite 404 means the version dir/tag is published but the file isn't
-    # there yet (or the URL template changed) -> skip; undetermined -> proceed.
+    # Confirm the artifact before editing the spec or opening a PR. A published
+    # version directory need not contain the artifact our packaging expects.
     url = source0_url(text, spec_macros(text), pkg_name, latest)
-    if url is not None:
-        reachable = url_reachable(url)
-        if reachable is False:
-            print(f"{pkg_name}: upstream {latest} detected but Source0 not reachable: {url}",
-                  file=sys.stderr)
-            emit_outputs(bumped="false")
-            return 0
-        if reachable is None:
-            print(f"{pkg_name}: WARNING could not verify Source0 reachability: {url}",
-                  file=sys.stderr)
+    try:
+        if url is None:
+            raise ValueError("could not resolve Source0")
+        if pkg_name == "prob2-ui":
+            validate_prob2_deb(url, latest)
+        else:
+            reachable = url_reachable(url)
+            if reachable is False:
+                raise ValueError("Source0 not reachable (HTTP 404/410)")
+            if reachable is None:
+                print(f"::warning::{pkg_name}: upstream {latest}: "
+                      f"could not verify Source0 reachability: {url}", file=sys.stderr)
+    except Exception as exc:
+        print(f"::error::{pkg_name}: upstream {latest}: Source0 validation failed: "
+              f"{url}: {type(exc).__name__}: {exc}", file=sys.stderr)
+        emit_outputs(bumped="false")
+        return 1
 
     path.write_text(bump_spec_text(text, latest))
     print(f"{pkg_name}: {current} -> {latest}")

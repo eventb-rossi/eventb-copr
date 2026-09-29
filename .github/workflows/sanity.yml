@@ -1,9 +1,9 @@
 name: sanity
 
 # Basic RPM sanity checks on every push / PR (the analog of gentoo-overlay's
-# pkgcheck). Offline and fast: parse every spec and rpmlint it. A full SRPM /
-# mock build is intentionally out of scope here — it would download every
-# Source0 (including the ~235 MB prob2-ui jar) plus the Adoptium JDK 21.
+# pkgcheck). Offline and fast: test release validation, parse specs and lint them.
+# A full SRPM / mock build is intentionally out of scope here — it would download
+# every Source0 (including the ~148 MB prob2-ui Debian archive) plus the Adoptium JDK 21.
 
 on:
   workflow_dispatch:
@@ -11,17 +11,27 @@ on:
     branches: [main]
     paths-ignore:
       - 'README.md'
-      - '.github/**'
   pull_request:
     branches: [main]
     paths-ignore:
       - 'README.md'
-      - '.github/**'
 
 permissions:
   contents: read
 
 jobs:
+  release-validation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - name: Install release validation tooling
+        run: sudo apt-get update && sudo apt-get install -y libarchive-tools zstd
+      - name: Test release validation
+        run: python3 -m unittest discover -s .github/scripts -p 'test_version_check.py'
+
   rpm-sanity:
     runs-on: ubuntu-latest
     container: fedora:latest

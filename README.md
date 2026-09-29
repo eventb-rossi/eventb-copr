@@ -33,7 +33,7 @@ sudo dnf install eventb-checker evbt tlc4b b2program eventb-animate eventb-to-tx
 | `rodin-rc` | x86_64 | Rodin Platform — release candidate (conflicts with `rodin`) |
 | `atelier-b` | x86_64 | Atelier B Community Edition — IDE for the B method |
 | `prob` | x86_64 | [ProB](https://prob.hhu.de/) — animator/model checker; Tcl/Tk GUI (`prob`) plus the `probcli` CLI |
-| `prob2-ui` | noarch | [ProB2-UI](https://prob.hhu.de/w/index.php/ProB2-UI) — JavaFX animator and model checker built on ProB |
+| `prob2-ui` | x86_64 | [ProB2-UI](https://prob.hhu.de/w/index.php/ProB2-UI) — JavaFX animator and model checker built on ProB |
 
 ```sh
 sudo dnf install rodin        # stable
@@ -65,8 +65,10 @@ only one at a time.
 - **Rodin** needs a system **Java 21 or newer** (it bundles none) and GTK 3.
 - **ProB** (`prob`) needs **Java 8 or newer** and Tcl/Tk 8.6; it pulls in `tk8`,
   `gmp` and `libuuid`, and recommends `graphviz` for graph/state-space visualisation.
-- **ProB2-UI** (`prob2-ui`) needs **Java 21 or newer**, GTK 3 and the X11/OpenGL
+- **ProB2-UI** (`prob2-ui`) needs **Java 21 or newer**, GTK 3, ALSA and the X11/OpenGL
   libraries its bundled JavaFX runtime loads (`libXtst`, `mesa-libGL`, `libXxf86vm`).
+  It uses the Linux JAR from upstream's Debian archive with system Java and
+  extracts its bundled ProB kernel at runtime (`libuuid` and `gmp` are required).
 
 ## Repository layout
 
@@ -121,9 +123,20 @@ Two GitHub Actions workflows (mirroring the `homebrew-tap` and `gentoo-overlay` 
   non-derivable URLs or prebuilt releases needing compatibility review (`rodin`,
   `rodin-rc`, `atelier-b`, `tlc4b`, `eventb-to-txt`, `ltsmin`) get a
   tracking issue labelled `version-bump`. `b2program` (pinned master commit) is not tracked.
-- **`sanity`** — runs on every push/PR. In a Fedora container it parses every spec
+  Confirmed missing `Source0` artifacts (HTTP 404/410) fail the package's bump job
+  before changing the spec. Inconclusive network checks warn for ordinary packages;
+  ProB2-UI requires downloading its Debian artifact and validating the embedded
+  Linux JAR's integrity, entrypoint and icon before a PR can open. Version discovery
+  remains best-effort across packages; artifact validation runs only for new versions.
+- **`sanity`** — runs on every push/PR except README-only changes, including changes
+  to scripts and workflows. It runs offline release-validation regression tests on
+  Ubuntu. In a Fedora container it parses every spec
   (`rpmspec -P`) and runs `rpmlint -c .rpmlint.toml`, failing only on error-severity
   diagnostics (accepted warnings are filtered by [`.rpmlint.toml`](.rpmlint.toml)).
+
+Both workflows run the release-validation regression tests. Run them locally with
+`python3 -m unittest discover -s .github/scripts -p 'test_version_check.py'`
+(requires `bsdtar` and `zstd`).
 
 [`.github/dependabot.yml`](.github/dependabot.yml) keeps the workflows' actions current
 (the only ecosystem applicable here — spec upstreams are handled by `version-check`).
