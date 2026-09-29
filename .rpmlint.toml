@@ -35,6 +35,11 @@ Filters = [
     '.*hidden-file-or-dir.*',
     '.*zero-length.*',
 
+    # prob2-ui's x86_64 JavaFX and ProB natives are nested in its jar, so RPM's
+    # ELF scanner cannot see them or generate their system-library requirements.
+    '^prob2-ui\..*no-binary.*',
+    '^prob2-ui\..*explicit-lib-dependency (alsa-lib|libXtst|libXxf86vm|libuuid)$',
+
     # ltsmin repackages upstream's 2018 ELF binaries. They cannot be rebuilt as
     # PIE without losing the legacy symbolic backends, and rpmlint's setgroups
     # diagnostic is a false positive on the prob2lts privilege-drop sequence.

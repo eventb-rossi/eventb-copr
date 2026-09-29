@@ -10,6 +10,7 @@
 *.tgz
 *.jar
 *.dmg
+*.deb
 *.zip
 # evbt ships its release asset as a bare file named "evbt"
 evbt/evbt
