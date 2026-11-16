@@ -88,7 +88,9 @@ jobs:
           # Pull requests: write), shared across the eventb-rossi packaging repos;
           # falls back to github.token (PR still opens, just doesn't re-trigger CI).
           token: ${{ secrets.VERSION_BUMP_TOKEN || github.token }}
-          branch: version-bump/${{ steps.bump.outputs.pn }}-${{ steps.bump.outputs.new }}
+          # outputs.ref is the version with characters git refuses in branch
+          # names (the RPM `^`/`~` of rodin's X.Y.Z^YYMM~rcN) replaced.
+          branch: version-bump/${{ steps.bump.outputs.pn }}-${{ steps.bump.outputs.ref }}
           delete-branch: true
           title: '${{ matrix.pkg }}: ${{ steps.bump.outputs.old }} → ${{ steps.bump.outputs.new }}'
           commit-message: |
@@ -105,8 +107,10 @@ jobs:
             | Upstream | `${{ steps.bump.outputs.new }}` |
 
             The spec's `Version:` was rewritten, `Release:` reset to `1`, and a
-            `%changelog` entry prepended. No source artifact is committed — Copr
-            re-downloads `Source0` via `spectool` at build time.
+            `%changelog` entry prepended (for `rodin`/`rodin-rc`, also the
+            `%global tag` and `%global buildid` of the Rodin-Bundle release). No
+            source artifact is committed — Copr re-downloads `Source0` via
+            `spectool` at build time.
 
             A confirmed missing `Source0` fails the bump job. Inconclusive network
             checks warn for ordinary packages; ProB2-UI requires a downloaded,

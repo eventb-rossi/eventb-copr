@@ -1,7 +1,10 @@
 %global rodindir   %{_prefix}/lib/rodin
-%global sfdir      3.10-RC2
-%global buildid    3.10.0.202605210654-RC2-881664d81
-%global tarball    rodin-%{buildid}-linux.gtk.x86_64.tar.gz
+# Rodin-Bundle release tag, and the build id its tarball name embeds (base
+# version + commit date/hash qualifier, not derivable from the tag). Both are
+# rewritten by the version-check workflow on bumps.
+%global tag        v3.10.0-2611
+%global buildid    3.10.0.202611160826-a263a14
+%global tarball    rodin-%{buildid}-rossi-linux.gtk.x86_64.tar.gz
 
 # Repackaged prebuilt Eclipse RCP product: keep the upstream binaries intact and
 # do not let rpm generate Provides/Requires from the bundled private libraries.
@@ -14,17 +17,22 @@
 %global __requires_exclude_from ^%{rodindir}/.*$
 
 Name:           rodin-rc
-Version:        3.10
-Release:        0.4.RC2%{?dist}
-Summary:        Rodin Platform release candidate (Event-B IDE)
+# Follows the newest Rodin-Bundle build, release candidates included: tag
+# vX.Y.Z-YYMM[.N][-rcN] -> X.Y.Z^YYMM[.N][~rcN], so a candidate sorts before
+# its final release and the final release replaces it.
+Version:        3.10.0^2611
+Release:        1%{?dist}
+Summary:        Rodin Platform release candidates (Event-B IDE)
 
-License:        EPL-1.0 AND EPL-2.0
-URL:            https://wiki.event-b.org/
-# Release-candidate build; the filename embeds an opaque build id.
-Source0:        https://downloads.sourceforge.net/rodin-b-sharp/Core_Rodin_Platform/%{sfdir}/%{tarball}
+# Eclipse platform and the PO Cleaner / Rossi bridge plug-ins are EPL-2.0; the
+# Rodin core and ProB plug-ins are EPL-1.0; the bundled SMT solvers are MIT (Z3)
+# and BSD-3-Clause (CVC3, CVC4, veriT).
+License:        EPL-1.0 AND EPL-2.0 AND MIT AND BSD-3-Clause
+URL:            https://github.com/eventb-rossi/Rodin-Bundle
+Source0:        https://github.com/eventb-rossi/Rodin-Bundle/releases/download/%{tag}/%{tarball}
 Source1:        rodin.desktop
 
-# Upstream ships only a Linux x86_64 build for this release candidate.
+# Rodin-Bundle ships a single Linux build, for x86_64.
 ExclusiveArch:  x86_64
 BuildRequires:  desktop-file-utils
 BuildRequires:  ImageMagick
@@ -39,11 +47,11 @@ Requires:       hicolor-icon-theme
 Recommends:     webkit2gtk4.1
 
 %description
-The Rodin Platform is an Eclipse-based IDE for Event-B. This package provides
-the 3.10-RC2 release candidate, repackaged from the official upstream Linux
-build. It bundles no Java runtime and needs a system Java 21 or newer. It
-installs as a drop-in replacement for the stable "rodin" package (only one at a
-time).
+The Rodin Platform is an Eclipse-based IDE for Event-B. This package follows
+the newest eventb-rossi Rodin Bundle build, release candidates included, so it
+is the place to try a bundle before it becomes the stable "rodin" package. It
+bundles no Java runtime and needs a system Java 21 or newer. It installs as a
+drop-in replacement for the stable "rodin" package (only one at a time).
 
 %prep
 %autosetup -n rodin
@@ -101,6 +109,10 @@ desktop-file-validate %{buildroot}%{_datadir}/applications/rodin.desktop
 %{_datadir}/applications/rodin.desktop
 
 %changelog
+* Mon Nov 16 2026 Denis Efremov <efremov@linux.com> - 3.10.0^2611-1
+- Switch to the eventb-rossi Rodin Bundle: follow its newest build, release
+  candidates included (now v3.10.0-2611)
+
 * Thu Jul 02 2026 Denis Efremov <efremov@linux.com> - 3.10-0.4.RC2
 - Raise the runtime baseline to Java 21 (matches upstream 3.10-RC2)
 

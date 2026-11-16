@@ -1,8 +1,10 @@
 # Fedora Copr packaging for Event-B / B-method tools
 
 RPM packaging for the [Event-B](https://www.event-b.org/) / B-method ecosystem —
-the Rodin Platform IDE, ClearSy's Atelier B, the ProB model checker, and a set of
-command-line tools for code generation, model checking and validation.
+the Rodin Platform IDE (as the eventb-rossi
+[Rodin Bundle](https://github.com/eventb-rossi/Rodin-Bundle)), ClearSy's Atelier B,
+the ProB model checker, and a set of command-line tools for code generation,
+model checking and validation.
 
 ## Install
 
@@ -29,15 +31,15 @@ sudo dnf install eventb-checker evbt tlc4b b2program eventb-animate eventb-to-tx
 
 | Package | Arch | Description |
 | ------- | ---- | ----------- |
-| `rodin` | x86_64 | Rodin Platform — Event-B IDE (stable) |
-| `rodin-rc` | x86_64 | Rodin Platform — release candidate (conflicts with `rodin`) |
+| `rodin` | x86_64 | [Rodin Bundle](https://github.com/eventb-rossi/Rodin-Bundle) — the Rodin Event-B IDE with parallel proving, SMT solvers, ProB, the PO Cleaner and the Rossi bridge (stable) |
+| `rodin-rc` | x86_64 | Rodin Bundle — newest build, release candidates included (conflicts with `rodin`) |
 | `atelier-b` | x86_64 | Atelier B Community Edition — IDE for the B method |
 | `prob` | x86_64 | [ProB](https://prob.hhu.de/) — animator/model checker; Tcl/Tk GUI (`prob`) plus the `probcli` CLI |
 | `prob2-ui` | x86_64 | [ProB2-UI](https://prob.hhu.de/w/index.php/ProB2-UI) — JavaFX animator and model checker built on ProB |
 
 ```sh
 sudo dnf install rodin        # stable
-sudo dnf install rodin-rc     # release candidate
+sudo dnf install rodin-rc     # newest build, release candidates included
 sudo dnf install atelier-b    # Atelier B Community Edition
 sudo dnf install prob         # ProB (probcli + Tcl/Tk GUI)
 sudo dnf install prob2-ui     # ProB2-UI (JavaFX)
@@ -119,10 +121,13 @@ Two GitHub Actions workflows (mirroring the `homebrew-tap` and `gentoo-overlay` 
   [`.github/scripts/version_check.py`](.github/scripts/version_check.py): packages with a
   clean `%{version}`-templated `Source0` are auto-bumped into a pull request (the spec's
   `Version:`/`Release:`/`%changelog` are rewritten — no source artifact is committed, Copr
-  re-fetches `Source0` at build time), while packages with opaque build ids or
-  non-derivable URLs or prebuilt releases needing compatibility review (`rodin`,
-  `rodin-rc`, `atelier-b`, `tlc4b`, `eventb-to-txt`, `ltsmin`) get a
-  tracking issue labelled `version-bump`. `b2program` (pinned master commit) is not tracked.
+  re-fetches `Source0` at build time). `rodin` and `rodin-rc` are auto-bumped from
+  [Rodin-Bundle](https://github.com/eventb-rossi/Rodin-Bundle) releases (`rodin-rc`
+  also takes release candidates); their bump also rewrites the spec's `%global tag`
+  and `%global buildid`, read from the release's assets. Packages with non-derivable
+  URLs or prebuilt releases needing compatibility review (`atelier-b`, `tlc4b`,
+  `eventb-to-txt`, `ltsmin`) get a tracking issue labelled `version-bump`.
+  `b2program` (pinned master commit) is not tracked.
   Confirmed missing `Source0` artifacts (HTTP 404/410) fail the package's bump job
   before changing the spec. Inconclusive network checks warn for ordinary packages;
   ProB2-UI requires downloading its Debian artifact and validating the embedded

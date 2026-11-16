@@ -11,10 +11,15 @@ and gentoo-overlay's version-check:
     repo .gitignores the artifacts), so nothing else needs regenerating. These
     are turned into pull requests.
 
-  * "track" packages embed opaque build ids (rodin), bundle vendored archives
-    (atelier-b), or carry a non-version-derivable URL (eventb-to-txt's hashed
-    PyPI path), so they can't be bumped blindly. We only detect the new version
-    and file a GitHub issue for a human to handle.
+    rodin and rodin-rc are bump packages too, although their tarball name
+    embeds an opaque build id: the rodin_bundle source reads that id from the
+    Rodin-Bundle release's asset list, and the bump also rewrites the spec's
+    `%global tag` and `%global buildid`.
+
+  * "track" packages bundle vendored archives (atelier-b) or carry a
+    non-version-derivable URL (eventb-to-txt's hashed PyPI path), so they
+    can't be bumped blindly. We only detect the new version and file a GitHub
+    issue for a human to handle.
 
 Subcommands:
   check        Print a JSON report of every package (current/latest/outdated).
@@ -50,13 +55,10 @@ CHANGELOG_AUTHOR = "Denis Efremov <efremov@linux.com>"
 #
 # source.type:
 #   github         -> latest non-prerelease GitHub release tag (repo = owner/name)
-#   sourceforge    -> newest plain X.Y.Z version dir under a SourceForge path
-#   sourceforge_rc -> newest X.Y-RCn release-candidate dir under a SourceForge path
+#   rodin_bundle   -> newest eventb-rossi/Rodin-Bundle release with a Linux
+#                     tarball; "prerelease": true also considers -rcN prereleases
 #   atelierb       -> scrape the Atelier B download page for the free version
 #   apache_index   -> newest X.Y.Z subdirectory in an Apache/nginx autoindex
-#
-# current_macro: read the packaged version from this spec %global instead of the
-#                Version: field (rodin-rc keeps its RC build line in %{sfdir}).
 PACKAGES = [
     {"pkg": "eventb-checker", "mode": "bump",
      "source": {"type": "github", "repo": "eventb-rossi/eventb-checker"}},
@@ -75,6 +77,12 @@ PACKAGES = [
     {"pkg": "prob2-ui", "mode": "bump",
      "source": {"type": "apache_index",
                 "url": "https://stups.hhu-hosting.de/downloads/prob2/"}},
+    # rodin follows Rodin-Bundle releases; rodin-rc follows the newest build,
+    # release candidates (GitHub prereleases) included.
+    {"pkg": "rodin", "mode": "bump",
+     "source": {"type": "rodin_bundle"}},
+    {"pkg": "rodin-rc", "mode": "bump",
+     "source": {"type": "rodin_bundle", "prerelease": True}},
 
     # eventb-to-txt's Source0 is a content-hashed pythonhosted path that is not
     # derivable from the version, so detect via the upstream repo and track.
@@ -82,12 +90,6 @@ PACKAGES = [
      "source": {"type": "github", "repo": "eventb-rossi/eventb-to-txt"}},
     {"pkg": "tlc4b", "mode": "track",
      "source": {"type": "github", "repo": "hhu-stups/tlc4b"}},
-    {"pkg": "rodin", "mode": "track",
-     "source": {"type": "sourceforge", "project": "rodin-b-sharp",
-                "path": "/Core_Rodin_Platform"}},
-    {"pkg": "rodin-rc", "mode": "track", "current_macro": "sfdir",
-     "source": {"type": "sourceforge_rc", "project": "rodin-b-sharp",
-                "path": "/Core_Rodin_Platform"}},
     {"pkg": "atelier-b", "mode": "track",
      "source": {"type": "atelierb",
                 "url": "https://www.atelierb.eu/en/atelier-b-support-maintenance/download-atelier-b/"}},
@@ -119,7 +121,6 @@ def gh_headers() -> dict:
 
 # Leading dotted-numeric run of a version-ish string (drops a v-prefix / suffix).
 VERSION_RE = re.compile(r"\d+(?:\.\d+)*")
-RC_RE = re.compile(r"[-_.]?RC(\d+)", re.IGNORECASE)
 
 
 def version_tuple(s: str) -> tuple[int, ...]:
@@ -142,25 +143,6 @@ def version_newer(latest: str, current: str) -> bool:
     a, b = version_tuple(latest), version_tuple(current)
     n = max(len(a), len(b))
     return a + (0,) * (n - len(a)) > b + (0,) * (n - len(b))
-
-
-def rc_num(s: str) -> int:
-    """Trailing RC number of a version string, e.g. '3.10-RC2' -> 2 (0 if none)."""
-    m = RC_RE.search(s)
-    return int(m.group(1)) if m else 0
-
-
-def version_newer_rc(latest: str, current: str) -> bool:
-    """RC-aware comparison: compare the X.Y base first, then the RC number.
-
-    Lets the tracker notice 3.10-RC2 -> 3.10-RC3 (same numeric base, higher RC),
-    which the suffix-blind version_newer() would miss, while still ordering
-    3.11-RC1 above 3.10-RC9 by base.
-    """
-    base_l, base_c = version_tuple(latest), version_tuple(current)
-    if base_l != base_c:
-        return version_newer(latest, current)
-    return rc_num(latest) > rc_num(current)
 
 
 def clean_pv(tag: str) -> str:
@@ -194,19 +176,14 @@ def expand_macros(value: str, macros: dict[str, str]) -> str:
 
 
 def current_version(pkg: dict) -> str | None:
-    """Packaged version from the spec: a %global named by current_macro, else
-    the Version: field, with simple %{macro} indirection resolved."""
+    """Packaged version from the spec's Version: field, with simple %{macro}
+    indirection resolved."""
     path = spec_path(pkg["pkg"])
     if not path.exists():
         return None
     text = path.read_text()
-    macros = spec_macros(text)
-    if pkg.get("current_macro"):
-        raw = macros.get(pkg["current_macro"])
-    else:
-        m = VERSION_FIELD_RE.search(text)
-        raw = m.group(1) if m else None
-    return expand_macros(raw, macros) if raw else None
+    m = VERSION_FIELD_RE.search(text)
+    return expand_macros(m.group(1), spec_macros(text)) if m else None
 
 
 # --- latest (upstream) version --------------------------------------------
@@ -238,32 +215,87 @@ def latest_github(repo: str) -> str:
     return clean_pv(max(names, key=version_tuple))
 
 
-def latest_sourceforge(project: str, path: str) -> str:
-    """Newest plain version directory directly under a SourceForge files path.
+# --- Rodin-Bundle ------------------------------------------------------------
+# Release tags are vX.Y.Z-YYMM, a second release in a month is vX.Y.Z-YYMM.N,
+# and a release candidate (published as a GitHub prerelease) appends -rcN. The
+# RPM Version renders the same parts as X.Y.Z^YYMM[.N][~rcN]: `^` sorts the
+# bundle build after the plain Rodin X.Y.Z it is built from, and `~` sorts a
+# candidate before its final release.
+BUNDLE_REPO = "eventb-rossi/Rodin-Bundle"
+BUNDLE_TAG_RE = re.compile(r"^v(\d+(?:\.\d+)*)-(\d{4})(?:\.(\d+))?(?:-rc(\d+))?$")
+BUNDLE_RPM_RE = re.compile(r"^(\d+(?:\.\d+)*)\^(\d{4})(?:\.(\d+))?(?:~rc(\d+))?$")
+# The tarball name embeds the OSGi qualifier (commit date + hash), which the tag
+# does not carry: rodin-<X.Y.Z>.<qualifier>-rossi-linux.gtk.x86_64.tar.gz. The
+# spec's %{buildid} is everything between "rodin-" and "-rossi-".
+BUNDLE_ASSET_RE = re.compile(r"^rodin-(\d+(?:\.\d+)*\.\S+?)-rossi-linux\.gtk\.x86_64\.tar\.gz$")
 
-    Matches `<path>/<X.Y.Z>/` in the files RSS; a trailing `/` is required, so
-    decorated dirs like `3.10-RC2/` (release candidates) are skipped.
+
+def bundle_key(version: str) -> tuple:
+    """Sort key for a Rodin-Bundle tag or RPM version (or a plain version).
+
+    (base, YYMM, N, rc): a missing N is 0 and a final release outranks all of
+    its candidates. A plain X.Y[.Z] -- the vanilla Rodin this package used to
+    ship -- gets YYMM -1, so it sorts below every bundle build of that base.
     """
-    rss = http_get(f"https://sourceforge.net/projects/{project}/rss?path={path}").decode("utf-8", "replace")
-    pat = re.escape(path.rstrip("/")) + r"/(\d+(?:\.\d+)*)/"
-    versions = re.findall(pat, rss)
-    if not versions:
-        raise ValueError(f"no versions matched under {path}")
-    return max(versions, key=version_tuple)
+    m = BUNDLE_TAG_RE.match(version) or BUNDLE_RPM_RE.match(version)
+    if m:
+        base, yymm, n, rc = m.groups()
+        parts = (int(yymm), int(n or 0), int(rc) if rc else float("inf"))
+    else:
+        base, parts = version, (-1, 0, float("inf"))
+    nums = version_tuple(base)
+    return (nums + (0,) * (4 - len(nums)), *parts)
 
 
-def latest_sourceforge_rc(project: str, path: str) -> str:
-    """Newest X.Y[.Z]-RCn release-candidate directory under a SourceForge path.
+def bundle_rpm_version(tag: str) -> str:
+    """'v3.10.0-2609.2' -> '3.10.0^2609.2', 'v3.10.0-2611-rc1' -> '3.10.0^2611~rc1'."""
+    m = BUNDLE_TAG_RE.match(tag)
+    if not m:
+        raise ValueError(f"not a Rodin-Bundle release tag: {tag!r}")
+    base, yymm, n, rc = m.groups()
+    return f"{base}^{yymm}" + (f".{n}" if n else "") + (f"~rc{rc}" if rc else "")
 
-    The plain sourceforge rule deliberately skips decorated dirs, so RC tracks
-    need their own matcher. Ordered by (numeric base, RC number).
+
+def latest_rodin_bundle(source: dict) -> dict:
+    """Newest complete Rodin-Bundle release: {"version", "tag", "buildid"}.
+
+    Reads the releases list rather than releases/latest so release candidates
+    can be included on request. A release counts only once both its Linux
+    tarball and SHA256SUMS are attached, so a release caught mid-upload is
+    skipped instead of producing a Source0 that does not exist yet.
     """
-    rss = http_get(f"https://sourceforge.net/projects/{project}/rss?path={path}").decode("utf-8", "replace")
-    pat = re.escape(path.rstrip("/")) + r"/(\d+(?:\.\d+)*-RC\d+)/"
-    versions = re.findall(pat, rss, re.IGNORECASE)
-    if not versions:
-        raise ValueError(f"no release-candidate versions matched under {path}")
-    return max(versions, key=lambda v: (version_tuple(v), rc_num(v)))
+    releases = json.loads(http_get(f"https://api.github.com/repos/{BUNDLE_REPO}/releases?per_page=100",
+                                   headers=gh_headers()))
+    candidates = []
+    for rel in releases:
+        tag = rel.get("tag_name") or ""
+        if rel.get("draft") or (rel.get("prerelease") and not source.get("prerelease")):
+            continue
+        m = BUNDLE_TAG_RE.match(tag)
+        if not m:
+            continue
+        names = {a.get("name") for a in rel.get("assets") or []}
+        builds = [am.group(1) for name in names if name and (am := BUNDLE_ASSET_RE.match(name))]
+        if len(builds) != 1 or "SHA256SUMS" not in names or not builds[0].startswith(m.group(1) + "."):
+            continue
+        candidates.append({"version": bundle_rpm_version(tag), "tag": tag, "buildid": builds[0]})
+    if not candidates:
+        raise ValueError(f"{BUNDLE_REPO}: no release with a Linux tarball and SHA256SUMS")
+    return max(candidates, key=lambda c: bundle_key(c["tag"]))
+
+
+def set_bundle_globals(text: str, release: dict) -> str:
+    """Point the spec's `%global tag` / `%global buildid` at `release`.
+
+    Each must be defined exactly once; anything else means the spec no longer
+    has the layout this bump understands, so refuse rather than guess.
+    """
+    for name in ("tag", "buildid"):
+        text, n = re.subn(rf"^(%global[ \t]+{name}[ \t]+).*$",
+                          lambda m: m.group(1) + release[name], text, flags=re.MULTILINE)
+        if n != 1:
+            raise ValueError(f"expected exactly one %global {name}, found {n}")
+    return text
 
 
 def latest_atelierb(url: str) -> str:
@@ -292,10 +324,8 @@ def latest_version(source: dict) -> str:
     t = source["type"]
     if t == "github":
         return latest_github(source["repo"])
-    if t == "sourceforge":
-        return latest_sourceforge(source["project"], source["path"])
-    if t == "sourceforge_rc":
-        return latest_sourceforge_rc(source["project"], source["path"])
+    if t == "rodin_bundle":
+        return latest_rodin_bundle(source)["version"]
     if t == "atelierb":
         return latest_atelierb(source["url"])
     if t == "apache_index":
@@ -306,8 +336,8 @@ def latest_version(source: dict) -> str:
 def is_outdated(source: dict, latest: str | None, current: str | None) -> bool:
     if not (latest and current):
         return False
-    if source.get("type") == "sourceforge_rc":
-        return version_newer_rc(latest, current)
+    if source.get("type") == "rodin_bundle":
+        return bundle_key(latest) > bundle_key(current)
     return version_newer(latest, current)
 
 
@@ -422,9 +452,10 @@ def emit_outputs(**kv: str) -> None:
                 fh.write(f"{k}={v}\n")
 
 
-def bump_spec_text(text: str, new: str) -> str:
+def bump_spec_text(text: str, new: str, note: str | None = None) -> str:
     """Return `text` with Version: set to `new`, Release: reset to 1, and a new
-    %changelog entry prepended. Whitespace/alignment of the fields is preserved."""
+    %changelog entry prepended (`note`, default "Update to <new>").
+    Whitespace/alignment of the fields is preserved."""
     text, n = re.subn(r"^(Version:[ \t]*).*$", lambda m: m.group(1) + new, text,
                       count=1, flags=re.MULTILINE)
     if n != 1:
@@ -436,7 +467,7 @@ def bump_spec_text(text: str, new: str) -> str:
 
     date = datetime.date.today().strftime("%a %b %d %Y")
     entry = (f"* {date} {CHANGELOG_AUTHOR} - {new}-1\n"
-             f"- Update to {new}\n\n")
+             f"- {note or f'Update to {new}'}\n\n")
     # Normalise the header to "%changelog\n" before inserting, so a spec whose
     # %changelog line is the last line with no trailing newline still works
     # (the `\n?` keeps the match optional) without doubling the separator.
@@ -454,7 +485,10 @@ def cmd_bump(pkg_name: str) -> int:
         return 2
 
     current = current_version(pkg)
-    latest = latest_version(pkg["source"])
+    # A Rodin-Bundle bump also needs the release's tag and build id, not just
+    # its version, so keep the whole release record for it.
+    release = latest_rodin_bundle(pkg["source"]) if pkg["source"].get("type") == "rodin_bundle" else None
+    latest = release["version"] if release else latest_version(pkg["source"])
     if not (current and latest and is_outdated(pkg["source"], latest, current)):
         print(f"{pkg_name}: up to date ({current}, upstream {latest})")
         emit_outputs(bumped="false")
@@ -465,8 +499,11 @@ def cmd_bump(pkg_name: str) -> int:
 
     # Confirm the artifact before editing the spec or opening a PR. A published
     # version directory need not contain the artifact our packaging expects.
-    url = source0_url(text, spec_macros(text), pkg_name, latest)
+    url = None
     try:
+        if release:
+            text = set_bundle_globals(text, release)
+        url = source0_url(text, spec_macros(text), pkg_name, latest)
         if url is None:
             raise ValueError("could not resolve Source0")
         if pkg_name == "prob2-ui":
@@ -484,10 +521,14 @@ def cmd_bump(pkg_name: str) -> int:
         emit_outputs(bumped="false")
         return 1
 
-    path.write_text(bump_spec_text(text, latest))
+    note = f"Update to Rodin-Bundle {release['tag']}" if release else None
+    path.write_text(bump_spec_text(text, latest, note))
     print(f"{pkg_name}: {current} -> {latest}")
     print(f"  rewrote {path.relative_to(REPO_ROOT)}")
-    emit_outputs(bumped="true", pn=pkg_name, old=current, new=latest)
+    # `^` and `~` (RPM version operators) are not allowed in git ref names, so
+    # the bump branch is named after a sanitized copy of the version.
+    emit_outputs(bumped="true", pn=pkg_name, old=current, new=latest,
+                 ref=re.sub(r"[^0-9A-Za-z._+-]", "-", latest))
     return 0
 
 

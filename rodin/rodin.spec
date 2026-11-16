@@ -1,6 +1,10 @@
 %global rodindir   %{_prefix}/lib/%{name}
-%global buildid    3.10.0.202607010932-881664d81
-%global tarball    rodin-%{buildid}-linux.gtk.x86_64.tar.gz
+# Rodin-Bundle release tag, and the build id its tarball name embeds (base
+# version + commit date/hash qualifier, not derivable from the tag). Both are
+# rewritten by the version-check workflow on bumps.
+%global tag        v3.10.0-2611
+%global buildid    3.10.0.202611160826-a263a14
+%global tarball    rodin-%{buildid}-rossi-linux.gtk.x86_64.tar.gz
 
 # Repackaged prebuilt Eclipse RCP product: keep the upstream binaries intact
 # (no debuginfo, no stripping, no rpath check) and do not let rpm generate
@@ -14,16 +18,19 @@
 %global __requires_exclude_from ^%{rodindir}/.*$
 
 Name:           rodin
-Version:        3.10
+# Tag vX.Y.Z-YYMM[.N] -> X.Y.Z^YYMM[.N]: sorts after the plain Rodin X.Y.Z the
+# bundle is built from (and after the vanilla 3.10 this package used to ship).
+Version:        3.10.0^2611
 Release:        1%{?dist}
 Summary:        IDE for formal modelling and verification with Event-B
 
-# Eclipse platform components are EPL-2.0; the Rodin-specific plugins are EPL-1.0.
-License:        EPL-1.0 AND EPL-2.0
-URL:            https://wiki.event-b.org/
-# The filename embeds an opaque build id (timestamp + git hash); update it on
-# version bumps. Upstream ships a Linux x86_64 build only for the 3.10 release.
-Source0:        https://downloads.sourceforge.net/rodin-b-sharp/Core_Rodin_Platform/%{version}/%{tarball}
+# Eclipse platform and the PO Cleaner / Rossi bridge plug-ins are EPL-2.0; the
+# Rodin core and ProB plug-ins are EPL-1.0; the bundled SMT solvers are MIT (Z3)
+# and BSD-3-Clause (CVC3, CVC4, veriT).
+License:        EPL-1.0 AND EPL-2.0 AND MIT AND BSD-3-Clause
+URL:            https://github.com/eventb-rossi/Rodin-Bundle
+# Rodin-Bundle ships a single Linux build, for x86_64.
+Source0:        https://github.com/eventb-rossi/Rodin-Bundle/releases/download/%{tag}/%{tarball}
 Source1:        rodin.desktop
 
 ExclusiveArch:  x86_64
@@ -40,8 +47,9 @@ Recommends:     webkit2gtk4.1
 %description
 The Rodin Platform is an Eclipse-based IDE for Event-B that provides effective
 support for refinement and mathematical proof. This package repackages the
-official upstream Linux build; it bundles no Java runtime and needs a system
-Java 21 or newer.
+eventb-rossi Rodin Bundle: Rodin with parallel automatic proving, the SMT
+solvers, ProB, the Proof Obligation Cleaner and the Rossi language-server
+bridge. It bundles no Java runtime and needs a system Java 21 or newer.
 
 %prep
 %autosetup -n %{name}
@@ -100,6 +108,10 @@ desktop-file-validate %{buildroot}%{_datadir}/applications/%{name}.desktop
 %{_datadir}/applications/%{name}.desktop
 
 %changelog
+* Mon Nov 16 2026 Denis Efremov <efremov@linux.com> - 3.10.0^2611-1
+- Switch to the eventb-rossi Rodin Bundle (v3.10.0-2611): Rodin 3.10 with
+  parallel proving, SMT solvers, ProB, the PO Cleaner and the Rossi bridge
+
 * Thu Jul 02 2026 Denis Efremov <efremov@linux.com> - 3.10-1
 - Update to 3.10 (raises the runtime baseline to Java 21)
 

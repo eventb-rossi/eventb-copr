@@ -1,5 +1,6 @@
 import contextlib
 import io
+import json
 import os
 import subprocess
 import tarfile
@@ -77,7 +78,10 @@ class BumpTest(unittest.TestCase):
 
     def test_missing_source_fails_every_bump_package(self):
         for pkg in version_check.PACKAGES:
-            if pkg["mode"] != "bump" or pkg["pkg"] == "prob2-ui":
+            # prob2-ui validates a download and rodin_bundle packages rewrite
+            # their own globals; both have dedicated tests below.
+            if pkg["mode"] != "bump" or pkg["pkg"] == "prob2-ui" \
+                    or pkg["source"]["type"] == "rodin_bundle":
                 continue
             with self.subTest(pkg=pkg["pkg"]):
                 path = self.write_spec(pkg["pkg"])
@@ -209,6 +213,156 @@ class BumpTest(unittest.TestCase):
         self.assertIn("- Update to 1.4.0", path.read_text())
         self.assertIn("Previous release", path.read_text())
         self.assertIn("bumped=true\npn=prob2-ui\nold=1.3.1\nnew=1.4.0\n", self.outputs.read_text())
+
+
+def bundle_release(tag, *, prerelease=False, draft=False, assets=None):
+    if assets is None:
+        assets = ["rodin-3.10.0.202612010000-abc1234-rossi-linux.gtk.x86_64.tar.gz",
+                  "rodin-3.10.0.202612010000-abc1234-rossi-win32.win32.x86_64.zip",
+                  "SHA256SUMS"]
+    return {"tag_name": tag, "prerelease": prerelease, "draft": draft,
+            "assets": [{"name": name} for name in assets]}
+
+
+class RodinBundleVersionTest(unittest.TestCase):
+    def test_rpm_rendering(self):
+        for tag, rpm in (("v3.10.0-2611", "3.10.0^2611"),
+                         ("v3.10.0-2609.2", "3.10.0^2609.2"),
+                         ("v3.10.0-2611-rc1", "3.10.0^2611~rc1"),
+                         ("v3.10.0-2609.2-rc3", "3.10.0^2609.2~rc3")):
+            with self.subTest(tag=tag):
+                self.assertEqual(version_check.bundle_rpm_version(tag), rpm)
+                self.assertEqual(version_check.bundle_key(tag), version_check.bundle_key(rpm))
+        for tag in ("3.10.0-2611", "v3.10", "v3.10.0-26", "v3.10.0-2611-beta1"):
+            with self.subTest(tag=tag), self.assertRaises(ValueError):
+                version_check.bundle_rpm_version(tag)
+
+    def test_ordering(self):
+        ordered = ["3.9", "3.10", "3.10.0^2609", "3.10.0^2609.2", "3.10.0^2611~rc1",
+                   "3.10.0^2611~rc2", "3.10.0^2611", "3.10.0^2611.1", "3.10.0^2612~rc1",
+                   "3.10.0^2612", "3.11.0^2701~rc1"]
+        self.assertEqual(sorted(reversed(ordered), key=version_check.bundle_key), ordered)
+        source = {"type": "rodin_bundle"}
+        # The switch from vanilla Rodin (Version: 3.10) is itself an update.
+        self.assertTrue(version_check.is_outdated(source, "3.10.0^2611", "3.10"))
+        self.assertTrue(version_check.is_outdated(source, "3.10.0^2612", "3.10.0^2611"))
+        self.assertTrue(version_check.is_outdated(source, "3.10.0^2611", "3.10.0^2611~rc2"))
+        self.assertFalse(version_check.is_outdated(source, "3.10.0^2611~rc2", "3.10.0^2611"))
+        self.assertFalse(version_check.is_outdated(source, "3.10.0^2611", "3.10.0^2611"))
+
+    def latest(self, releases, **source):
+        with patch.object(version_check, "http_get", return_value=json.dumps(releases).encode()):
+            return version_check.latest_rodin_bundle({"type": "rodin_bundle", **source})
+
+    def test_latest_release(self):
+        releases = [bundle_release("v3.10.0-2612-rc1", prerelease=True),
+                    bundle_release("v3.10.0-2611"),
+                    bundle_release("v3.10.0-2609.2")]
+        self.assertEqual(self.latest(releases), {
+            "version": "3.10.0^2611", "tag": "v3.10.0-2611",
+            "buildid": "3.10.0.202612010000-abc1234"})
+        self.assertEqual(self.latest(releases, prerelease=True)["tag"], "v3.10.0-2612-rc1")
+
+    def test_skips_incomplete_or_foreign_releases(self):
+        releases = [bundle_release("v3.10.0-2613", assets=["SHA256SUMS"]),
+                    bundle_release("v3.10.0-2612", assets=[
+                        "rodin-3.10.0.202612010000-abc1234-rossi-linux.gtk.x86_64.tar.gz"]),
+                    bundle_release("v3.10.0-2614", draft=True),
+                    bundle_release("v3.11.0-2615", assets=[
+                        "rodin-3.10.0.202612010000-abc1234-rossi-linux.gtk.x86_64.tar.gz",
+                        "SHA256SUMS"]),
+                    bundle_release("nightly"),
+                    bundle_release("v3.10.0-2611")]
+        self.assertEqual(self.latest(releases)["tag"], "v3.10.0-2611")
+        with self.assertRaises(ValueError):
+            self.latest(releases[:2])
+
+    def test_old_bare_hash_qualifier(self):
+        releases = [bundle_release("v3.10.0-2609", assets=[
+            "rodin-3.10.0.9cd92c4-rossi-linux.gtk.x86_64.tar.gz", "SHA256SUMS"])]
+        self.assertEqual(self.latest(releases)["buildid"], "3.10.0.9cd92c4")
+
+
+class RodinBundleBumpTest(unittest.TestCase):
+    setUp = BumpTest.setUp
+    assert_rejected = BumpTest.assert_rejected
+
+    SPEC = ("%global tag        v3.10.0-2611\n"
+            "%global buildid    3.10.0.202611160826-a263a14\n"
+            "%global tarball    rodin-%{buildid}-rossi-linux.gtk.x86_64.tar.gz\n"
+            "Name:           PKG\n"
+            "Version:        3.10.0^2611\n"
+            "Release:        3%{?dist}\n"
+            "Source0:        https://github.com/eventb-rossi/Rodin-Bundle/releases/download/%{tag}/%{tarball}\n"
+            "%changelog\n* Mon Nov 16 2026 Test - 3.10.0^2611-3\n- Previous release\n")
+    RELEASE = {"version": "3.10.0^2612.1~rc2", "tag": "v3.10.0-2612.1-rc2",
+               "buildid": "3.10.0.202612050101-0123abc"}
+
+    def write_bundle_spec(self, pkg, text=None):
+        path = self.root / pkg / f"{pkg}.spec"
+        path.parent.mkdir(exist_ok=True)
+        path.write_text(text or self.SPEC.replace("PKG", pkg))
+        return path
+
+    def bundle_bump(self, pkg, release=None):
+        out, err = io.StringIO(), io.StringIO()
+        with patch.object(version_check, "REPO_ROOT", self.root), \
+                patch.object(version_check, "latest_rodin_bundle", return_value=release or self.RELEASE), \
+                patch.dict(os.environ, {"GITHUB_OUTPUT": str(self.outputs)}), \
+                contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            status = version_check.cmd_bump(pkg)
+        return status, err.getvalue()
+
+    def test_bump_rewrites_tag_buildid_and_version(self):
+        for pkg in ("rodin", "rodin-rc"):
+            with self.subTest(pkg=pkg):
+                path = self.write_bundle_spec(pkg)
+                self.outputs.write_text("")
+                with patch.object(version_check, "url_reachable", return_value=True) as reachable:
+                    status, error = self.bundle_bump(pkg)
+                self.assertEqual((status, error), (0, ""))
+                reachable.assert_called_once_with(
+                    "https://github.com/eventb-rossi/Rodin-Bundle/releases/download/v3.10.0-2612.1-rc2/"
+                    "rodin-3.10.0.202612050101-0123abc-rossi-linux.gtk.x86_64.tar.gz")
+                text = path.read_text()
+                self.assertIn("%global tag        v3.10.0-2612.1-rc2\n", text)
+                self.assertIn("%global buildid    3.10.0.202612050101-0123abc\n", text)
+                self.assertIn("Version:        3.10.0^2612.1~rc2\nRelease:        1%{?dist}\n", text)
+                self.assertIn("- 3.10.0^2612.1~rc2-1\n- Update to Rodin-Bundle v3.10.0-2612.1-rc2\n", text)
+                self.assertIn("Previous release", text)
+                self.assertEqual(self.outputs.read_text(),
+                                 f"bumped=true\npn={pkg}\nold=3.10.0^2611\n"
+                                 "new=3.10.0^2612.1~rc2\nref=3.10.0-2612.1-rc2\n")
+
+    def test_up_to_date_bundle_is_left_alone(self):
+        path = self.write_bundle_spec("rodin")
+        original = path.read_text()
+        release = {"version": "3.10.0^2611~rc2", "tag": "v3.10.0-2611-rc2", "buildid": "x"}
+        with patch.object(version_check, "url_reachable") as reachable:
+            status, _ = self.bundle_bump("rodin", release)
+        self.assertEqual(status, 0)
+        self.assertEqual(path.read_text(), original)
+        reachable.assert_not_called()
+
+    def test_missing_or_duplicate_global_fails(self):
+        spec = self.SPEC.replace("PKG", "rodin")
+        for name, text in (("no buildid", spec.replace("%global buildid", "%global build_id")),
+                           ("two tags", "%global tag v1\n" + spec)):
+            with self.subTest(case=name):
+                path = self.write_bundle_spec("rodin", text)
+                self.outputs.write_text("")
+                with patch.object(version_check, "url_reachable", return_value=True):
+                    status, error = self.bundle_bump("rodin")
+                self.assert_rejected(path, text, status)
+                self.assertIn("::error::rodin: upstream 3.10.0^2612.1~rc2", error)
+
+    def test_missing_bundle_tarball_fails(self):
+        path = self.write_bundle_spec("rodin")
+        original = path.read_text()
+        with patch.object(version_check, "url_reachable", return_value=False):
+            status, error = self.bundle_bump("rodin")
+        self.assert_rejected(path, original, status)
+        self.assertIn("Source0 not reachable", error)
 
 
 if __name__ == "__main__":
