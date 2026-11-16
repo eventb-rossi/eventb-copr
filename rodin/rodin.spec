@@ -41,6 +41,9 @@ BuildRequires:  ImageMagick
 Requires:       java-headless >= 1:21
 Requires:       gtk3
 Requires:       hicolor-icon-theme
+# The bundled ProB's cspmf links libgmp; its libczmq/ltsmin/zmq_rpc link libuuid.
+Requires:       gmp
+Requires:       libuuid
 # Browser-backed views (e.g. some help/preview widgets) need WebKitGTK.
 Recommends:     webkit2gtk4.1
 
@@ -67,6 +70,26 @@ sed -i '/^-vmargs$/a -Dorg.eclipse.e4.ui.css.swt.theme=org.eclipse.e4.ui.css.the
 install -dm 0755 %{buildroot}%{rodindir}
 cp -a . %{buildroot}%{rodindir}/
 rm -f %{buildroot}%{rodindir}/epl-2.0.html
+
+# The bundled ProB plug-in ships its native tools without the executable bit,
+# and probcli.sh restores it with `chmod a+x` under `set -e`. Against this
+# root-owned install that chmod fails for every non-root user (even when the
+# bit is already set: only the owner may chmod), so ProB never starts. Mark
+# its ELF executables and #! scripts 0755, and make that chmod best-effort.
+probdir=$(echo %{buildroot}%{rodindir}/plugins/de.prob.core_*/prob/linux64)
+test -f "$probdir/probcli.sh"
+for f in "$probdir"/* "$probdir"/lib/*; do
+    [ -f "$f" ] && [ ! -L "$f" ] || continue
+    case "$f" in *.so|*.so.*) continue ;; esac
+    case "$(od -An -tx1 -N4 "$f" | tr -d ' \n')" in
+        7f454c46|2321*) chmod 0755 "$f" ;;
+    esac
+done
+sed -i -e '/^[[:space:]]*chmod a+x /s|$| 2>/dev/null \|\| :|' "$probdir/probcli.sh"
+grep -q 'chmod a+x .* || :$' "$probdir/probcli.sh" || {
+    echo "probcli.sh: chmod a+x line not found, ProB patch did not apply" >&2
+    exit 1
+}
 
 # Launcher wrapper. The Eclipse native launcher resolves its install tree from
 # /proc/self/exe, so exec'ing the real binary by absolute path is sufficient.
@@ -111,6 +134,8 @@ desktop-file-validate %{buildroot}%{_datadir}/applications/%{name}.desktop
 * Mon Nov 16 2026 Denis Efremov <efremov@linux.com> - 3.10.0^2611-1
 - Switch to the eventb-rossi Rodin Bundle (v3.10.0-2611): Rodin 3.10 with
   parallel proving, SMT solvers, ProB, the PO Cleaner and the Rossi bridge
+- Mark ProB's native tools executable and make probcli.sh's chmod
+  best-effort, so ProB starts for non-root users; require gmp and libuuid
 
 * Thu Jul 02 2026 Denis Efremov <efremov@linux.com> - 3.10-1
 - Update to 3.10 (raises the runtime baseline to Java 21)
